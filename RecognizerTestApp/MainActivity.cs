@@ -25,6 +25,11 @@ namespace RecognizerTestApp
         private const int REQUEST_CAMERA_ID = 1001;
         Camera _camera;
         private ImageView _imageView;
+        private Camera.Size _previewSize;
+        int _minX = int.MaxValue;
+        int _maxX = int.MinValue;
+        int _minY = int.MaxValue;
+        int _maxY = int.MinValue;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -51,9 +56,10 @@ namespace RecognizerTestApp
             if (_camera == null)
                 _camera = Camera.Open(0);
 
-            var previewSize = _camera.GetParameters().PreviewSize;
+            _previewSize = _camera.GetParameters().PreviewSize;
             _textureView.LayoutParameters =
-                new FrameLayout.LayoutParams(previewSize.Width, previewSize.Height, GravityFlags.Center);
+                new FrameLayout.LayoutParams(_previewSize.Width, _previewSize.Height, GravityFlags.Center);
+
 
             try
             {
@@ -93,9 +99,82 @@ namespace RecognizerTestApp
 
         public void OnSurfaceTextureUpdated(Android.Graphics.SurfaceTexture surface)
         {
+            _minX = int.MaxValue;
+            _maxX = int.MinValue;
+            _minY = int.MaxValue;
+            _maxY = int.MinValue;
+
             var bitmap = _textureView.GetBitmap(180, 100);
-           
+
+            var def = 50;
+            int referenceColorR = 126;
+            int referenceColorG = 193;
+            int referenceColorB = 208;
+
+            for (int i = 0; i < bitmap.Width; i++)
+            {
+                for (int j = 0; j < bitmap.Height; j++)
+                {
+                    var pixelColor = bitmap.GetPixel(i, j);
+
+                    int red = Color.GetRedComponent(pixelColor);
+                    int green = Color.GetGreenComponent(pixelColor);
+                    int blue = Color.GetBlueComponent(pixelColor);
+
+                    var dbl_test_red = Math.Pow(((double)referenceColorR - red), 2.0);
+                    var dbl_test_green = Math.Pow(((double)referenceColorG - green), 2.0);
+                    var dbl_test_blue = Math.Pow(((double)referenceColorB - blue), 2.0);
+
+                    var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
+
+                    if (distance < def)
+                    {
+                        UpdateBoundingBox(i, j);
+                        bitmap.SetPixel(i,j,Color.Blue);
+                        //_myBitmap2.SetPixel(i, j, System.Drawing.Color.Blue);
+                    }
+                    else
+                    {
+                        bitmap.SetPixel(i, j, Color.Yellow);
+                        //_myBitmap2.SetPixel(i, j, System.Drawing.Color.Yellow);
+                    }
+                }
+            }
+
+            if (_maxX <= _minX || _maxY <= _minY)
+            {
+                _minX = 0;
+                _minY = 0;
+                _maxX = _previewSize.Width;
+                _maxY = _previewSize.Height;
+            }
+            else
+            {
+                Canvas canvas = _textureView.LockCanvas();
+                if (canvas != null)
+                {
+                    Paint myPaint = new Paint();
+                    myPaint.Color = Color.Yellow;
+                    myPaint.StrokeWidth = 10;
+                    canvas.DrawRect(_minX, _minY, _maxX, _maxY, myPaint);
+                    _textureView.UnlockCanvasAndPost(canvas);
+                }
+            }
+
             _imageView.SetImageBitmap(bitmap);
+        }
+
+        private void UpdateBoundingBox(int x, int y)
+        {
+            if (_minX > x)
+                _minX = x;
+            if (_maxX < x)
+                _maxX = x;
+
+            if (_minY > y)
+                _minY = y;
+            if (_maxY < y)
+                _maxY = y;
         }
     }
 }
