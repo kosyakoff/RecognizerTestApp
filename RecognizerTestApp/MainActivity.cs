@@ -13,109 +13,89 @@ using Android.Support.V4.App;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Camera = Android.Hardware.Camera;
 
 namespace RecognizerTestApp
 {
     [Activity(Label = "@string/app_name", MainLauncher = true, Theme = "@style/Theme.AppCompat.Light.NoActionBar")]
-    public class MainActivity : AppCompatActivity, ISurfaceHolderCallback, Detector.IProcessor
+    public class MainActivity : AppCompatActivity, TextureView.ISurfaceTextureListener
     {
-        private SurfaceView _cameraView;
+        private TextureView _textureView;
         private TextView _textView;
-        private CameraSource _cameraSource;
         private const int REQUEST_CAMERA_ID = 1001;
-
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
-        {
-            switch (requestCode)
-            {
-                case REQUEST_CAMERA_ID:
-                    if (grantResults[0] == Permission.Granted)
-                    {
-                        _cameraSource.Start(_cameraView.Holder);
-                    }
-                    break;
-            }
-
-            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
+        Camera _camera;
+        private ImageView _imageView;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             // Set our view from the "main" layout resource
+
+            // _textView = FindViewById<TextView>(Resource.Id.text_view);
             SetContentView(Resource.Layout.activity_main);
 
-            _cameraView = FindViewById<SurfaceView>(Resource.Id.surface_view);
-            _textView = FindViewById<TextView>(Resource.Id.text_view);
+            _textureView = FindViewById<TextureView>(Resource.Id.surface_view);
+            _imageView = FindViewById<ImageView>(Resource.Id.image_view);
 
-            TextRecognizer textRecognizer = new TextRecognizer.Builder(ApplicationContext).Build();
-            if (!textRecognizer.IsOperational)
-            {
-                Log.Error("Main Activity", "Detector deps are not yet available");
-            }
-            else
-            {
-                _cameraSource = new CameraSource.Builder(ApplicationContext,  textRecognizer)
-                    .SetFacing(CameraFacing.Back)
-                    .SetRequestedPreviewSize(1280,1024)
-                    .SetRequestedFps(2.0f)
-                    .SetAutoFocusEnabled(true)
-                    .Build();
-                _cameraView.Holder.AddCallback(this);
-                textRecognizer.SetProcessor(this);
-
-            }
+            _textureView.SurfaceTextureListener = this;
         }
 
-        public void SurfaceChanged(ISurfaceHolder holder, Format format, int width, int height)
+        public void OnSurfaceTextureAvailable(Android.Graphics.SurfaceTexture surface, int width, int height)
         {
-            Console.WriteLine("1");
-        }
-
-        public void SurfaceCreated(ISurfaceHolder holder)
-        {
-            if (ActivityCompat.CheckSelfPermission(ApplicationContext,Manifest.Permission.Camera) != Android.Content.PM.Permission.Granted)
+            if (Camera.NumberOfCameras == 0)
             {
-                ActivityCompat.RequestPermissions(this, new string[]
-                {
-                    Android.Manifest.Permission.Camera
-                }, REQUEST_CAMERA_ID);
-
+                Toast.MakeText(this, "No camera", ToastLength.Long).Show();
                 return;
             }
+            _camera = Camera.Open();
+            if (_camera == null)
+                _camera = Camera.Open(0);
 
-            _cameraSource.Start(_cameraView.Holder);
-        }
+            var previewSize = _camera.GetParameters().PreviewSize;
+            _textureView.LayoutParameters =
+                new FrameLayout.LayoutParams(previewSize.Width, previewSize.Height, GravityFlags.Center);
 
-        public void SurfaceDestroyed(ISurfaceHolder holder)
-        {
-            _cameraSource.Stop();
-        }
-
-        public void ReceiveDetections(Detector.Detections detections)
-        {
-            SparseArray items = detections.DetectedItems;
-
-            if (items.Size() != 0)
+            try
             {
-                _textView.Post(() =>
-                {
-                    StringBuilder stringBuilder = new StringBuilder();
-
-                    for (int i = 0; i < items.Size(); ++i)
-                    {
-                        stringBuilder.Append(((TextBlock)items.ValueAt(i)).Value);
-                        stringBuilder.Append("\n");
-                    }
-
-                    _textView.Text = stringBuilder.ToString();
-                });
+                _camera.SetPreviewTexture(surface);
+                _camera.StartPreview();
             }
+            catch (Java.IO.IOException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            // this is the sort of thing TextureView enables
+            _textureView.Rotation = 90.0f;
+            _imageView.Rotation = 90.0f;
+            //_textureView.Alpha = 0.5f;
         }
 
-        public void Release()
+        public bool OnSurfaceTextureDestroyed(Android.Graphics.SurfaceTexture surface)
         {
-          
+            _camera.StopPreview();
+            _camera.Release();
+
+            return true;
+        }
+
+        public void OnSurfaceTextureSizeChanged(Android.Graphics.SurfaceTexture surface, int width, int height)
+        {
+            // camera takes care of this
+        }
+
+        //public static Bitmap RotateBitmap(Bitmap source, float angle)
+        //{
+        //    Matrix matrix = new Matrix();
+        //    matrix.PostRotate(angle);
+        //    return Bitmap.CreateBitmap(source, 0, 0, source.Width, source.Height, matrix, true);
+        //}
+
+        public void OnSurfaceTextureUpdated(Android.Graphics.SurfaceTexture surface)
+        {
+            var bitmap = _textureView.GetBitmap(180, 100);
+           
+            _imageView.SetImageBitmap(bitmap);
         }
     }
 }
