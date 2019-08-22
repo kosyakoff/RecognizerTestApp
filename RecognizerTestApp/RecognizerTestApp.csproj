@@ -82,6 +82,7 @@
     <AndroidAsset Include="Assets\tessdata\rus.cube.size" />
     <AndroidAsset Include="Assets\tessdata\rus.cube.word-freq" />
     <AndroidAsset Include="Assets\tessdata\rus.traineddata" />
+    <GoogleServicesJson Include="google-services.json" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
@@ -116,6 +117,15 @@
     <PackageReference Include="Xamarin.Android.Support.Design" Version="28.0.0.1" />
     <PackageReference Include="Xamarin.Android.Support.v7.AppCompat">
       <Version>28.0.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="Xamarin.Firebase.Messaging">
+      <Version>71.1740.0</Version>
+    </PackageReference>
+    <PackageReference Include="Xamarin.Firebase.ML.Vision">
+      <Version>71.1700.0</Version>
+    </PackageReference>
+    <PackageReference Include="Xamarin.GooglePlayServices.Base">
+      <Version>71.1610.0</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.GooglePlayServices.Vision">
       <Version>71.1702.0</Version>
