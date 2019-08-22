@@ -3419,9 +3419,6 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0075
 			public const int image = 2131492981;
 			
-			// aapt resource value: 0x7f0c00a5
-			public const int image_view = 2131493029;
-			
 			// aapt resource value: 0x7f0c00c0
 			public const int info = 2131493056;
 			
@@ -3502,6 +3499,9 @@ namespace RecognizerTestApp
 			
 			// aapt resource value: 0x7f0c0067
 			public const int outline = 2131492967;
+			
+			// aapt resource value: 0x7f0c00a6
+			public const int overlay_view = 2131493030;
 			
 			// aapt resource value: 0x7f0c005e
 			public const int parallax = 2131492958;
@@ -3689,8 +3689,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c00b2
 			public const int text_input_password_toggle = 2131493042;
 			
-			// aapt resource value: 0x7f0c00a6
-			public const int text_view = 2131493030;
+			// aapt resource value: 0x7f0c00a5
+			public const int text_view = 2131493029;
 			
 			// aapt resource value: 0x7f0c0018
 			public const int textinput_counter = 2131492888;
