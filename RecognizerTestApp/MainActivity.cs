@@ -19,6 +19,9 @@ using Android.Support.V4.Content;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Java.Nio;
+using Tesseract;
+using Tesseract.Droid;
 using Camera = Android.Hardware.Camera;
 using Timer = System.Timers.Timer;
 
@@ -44,10 +47,14 @@ namespace RecognizerTestApp
         private OverlayView _overlayView;
 
         private bool _shouldUpdate = true;
-        private Timer _updateTimer = new Timer(500)
+        private int _redrawCount = 0;
+        private TesseractApi _tesseractApi;
+
+        private string _referenceString = "рного тел ется, что и помощи  й можно п т в четыр ли овладе".Replace(" ","").ToLower();
+
+        private Timer _updateTimer = new Timer(700)
         {
             AutoReset = false
-
         };
 
         readonly int _accuracy = 10;
@@ -60,13 +67,17 @@ namespace RecognizerTestApp
             new Color(59,96,105),
         };
 
+
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
+
             base.OnCreate(savedInstanceState);
             // Set our view from the "main" layout resource
 
-            // _textView = FindViewById<TextView>(Resource.Id.text_view);
+            
             SetContentView(Resource.Layout.activity_main);
+            _textView = FindViewById<TextView>(Resource.Id.text_view);
 
             _textureView = FindViewById<TextureView>(Resource.Id.surface_view);
             _overlayView = FindViewById<OverlayView>(Resource.Id.overlay_view);
@@ -91,7 +102,7 @@ namespace RecognizerTestApp
             }
         }
 
-        public void OnSurfaceTextureAvailable(Android.Graphics.SurfaceTexture surface, int width, int height)
+        public async void OnSurfaceTextureAvailable(Android.Graphics.SurfaceTexture surface, int width, int height)
         {
             if (Camera.NumberOfCameras == 0)
             {
@@ -111,8 +122,7 @@ namespace RecognizerTestApp
                 new FrameLayout.LayoutParams(_previewSize.Width, _previewSize.Height, GravityFlags.Center);
 
             _pixelArray = new int[_previewSize.Width * _previewSize.Height];
-                //_updateBitmap = Bitmap.CreateBitmap(_previewSize.Width,
-                //_previewSize.Height, Bitmap.Config.Argb8888);
+
             try
             {
                 _camera.SetPreviewTexture(surface);
@@ -126,6 +136,10 @@ namespace RecognizerTestApp
             // this is the sort of thing TextureView enables
             _textureView.Rotation = 90.0f;
             //_textureView.Alpha = 0.5f;
+
+            _tesseractApi = new TesseractApi(ApplicationContext, AssetsDeployment.OncePerVersion);
+
+            await _tesseractApi.Init("rus");
         }
 
         public bool OnSurfaceTextureDestroyed(Android.Graphics.SurfaceTexture surface)
@@ -150,13 +164,14 @@ namespace RecognizerTestApp
 
 
 
-        public void OnSurfaceTextureUpdated(Android.Graphics.SurfaceTexture surface)
+        public async void OnSurfaceTextureUpdated(Android.Graphics.SurfaceTexture surface)
         {
 
             if (_shouldUpdate)
             {
                 _updateTimer.Start();
                 _shouldUpdate = false;
+                _redrawCount++;
             }
             else
             {
@@ -239,10 +254,51 @@ namespace RecognizerTestApp
                 }
             }
 
+            bool overlayWasHidden = _overlayView.Rect == null;
             _overlayView.Rect = null;
             if (_maxX > _minX && _maxY > _minY)
             {
+                int searchBuffer = 10;
+
                 _overlayView.Rect = new Rect(_previewSize.Height - _maxY, _minX,  _previewSize.Height - _minY, _maxX);
+
+                var matrix = new Matrix();
+                matrix.PostRotate(90);
+                var cropped = Bitmap.CreateBitmap(
+                    _updateBitmap,
+                    _minX > searchBuffer ? _minX - searchBuffer : _minX,
+                    _minY > searchBuffer ? _minY - searchBuffer : _minY, 
+                    (_maxX - _minX) + searchBuffer, 
+                    (_maxY - _minY) + searchBuffer, 
+                    matrix, 
+                    false);
+
+                if (_tesseractApi != null && _tesseractApi.Initialized)
+                {
+                    var success = await _tesseractApi.Recognise(cropped);
+                    if (success && _tesseractApi.Text.Length < 160)
+                    {
+                        string text = _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower();
+
+                        var diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
+
+                        double quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
+
+                        _textView.Text = $"Качество: {quality}%";
+                    }
+                }
+
+
+                //if (_redrawCount > 5)
+                //{
+                //    ExportBitmapAsPNG(cropped);
+                //    _redrawCount = 0;
+                //}
+            }
+
+            if (overlayWasHidden && _overlayView.Rect == null)
+            {
+                return;
             }
             _overlayView.ForceLayout();
         }
@@ -262,14 +318,10 @@ namespace RecognizerTestApp
 
         void ExportBitmapAsPNG(Bitmap bitmap)
         {
-            Matrix matrix = new Matrix();
-            matrix.PostRotate(90);
-            var rotatedBitmap = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, matrix, true);
-
             var sdCardPath = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
             var filePath = System.IO.Path.Combine(sdCardPath, "test.png");
             var stream = new FileStream(filePath, FileMode.Create);
-            rotatedBitmap.Compress(Bitmap.CompressFormat.Png, 100, stream);
+            bitmap.Compress(Bitmap.CompressFormat.Png, 100, stream);
             stream.Close();
         }
     }

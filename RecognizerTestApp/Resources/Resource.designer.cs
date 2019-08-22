@@ -26,6 +26,8 @@ namespace RecognizerTestApp
 		
 		public static void UpdateIdValues()
 		{
+			global::Tesseract.Droid.Resource.String.ApplicationName = global::RecognizerTestApp.Resource.String.ApplicationName;
+			global::Tesseract.Droid.Resource.String.Hello = global::RecognizerTestApp.Resource.String.Hello;
 		}
 		
 		public partial class Animation
@@ -4090,6 +4092,12 @@ namespace RecognizerTestApp
 		public partial class String
 		{
 			
+			// aapt resource value: 0x7f090049
+			public const int ApplicationName = 2131296329;
+			
+			// aapt resource value: 0x7f090048
+			public const int Hello = 2131296328;
+			
 			// aapt resource value: 0x7f090012
 			public const int abc_action_bar_home_description = 2131296274;
 			
@@ -4207,11 +4215,11 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f09002c
 			public const int abc_toolbar_collapse_description = 2131296300;
 			
-			// aapt resource value: 0x7f090049
-			public const int action_settings = 2131296329;
+			// aapt resource value: 0x7f09004b
+			public const int action_settings = 2131296331;
 			
-			// aapt resource value: 0x7f090048
-			public const int app_name = 2131296328;
+			// aapt resource value: 0x7f09004a
+			public const int app_name = 2131296330;
 			
 			// aapt resource value: 0x7f09003a
 			public const int appbar_scrolling_view_behavior = 2131296314;
