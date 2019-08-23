@@ -225,7 +225,13 @@ namespace RecognizerTestApp
                 }
             }
 
-            _overlayView.Rect = new Rect(_finalRecognitionResult.BoundingBox);
+
+            _overlayView.Rect = new Rect(
+                _previewSize.Height - _finalRecognitionResult.BoundingBox.Bottom, 
+                _finalRecognitionResult.BoundingBox.Left, 
+                _previewSize.Height - _finalRecognitionResult.BoundingBox.Top, 
+                _bBox.Right);
+
             updatedBitmap.Dispose();
 
             //timer.Stop();
