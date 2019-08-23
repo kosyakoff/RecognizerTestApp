@@ -12,6 +12,7 @@ using Firebase;
 using Firebase.ML.Vision.Text;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Tesseract.Droid;
 using Camera = Android.Hardware.Camera;
@@ -50,25 +51,7 @@ namespace RecognizerTestApp
         private const int REQUEST_WRITE_ID = 1002;
         private const int REQUEST_INTERNET_ID = 1003;
 
-        private readonly object _recognizeTaskLocker = new object();
-
-        public bool RecognizingTextInProgress
-        {
-            get
-            {
-                lock (_recognizeTaskLocker)
-                {
-                    return _recognizingTextInProgress;
-                }
-            }
-            set
-            {
-                lock (_recognizeTaskLocker)
-                {
-                    _recognizingTextInProgress = value;
-                }
-            }
-        }
+        public volatile bool _recognizingTextInProgress;
 
         private readonly int _accuracy = 10;
         private readonly Rect _bBox = new Rect();
@@ -155,8 +138,6 @@ namespace RecognizerTestApp
             // camera takes care of this
         }
 
-        private bool _recognizingTextInProgress = false;
-
         public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
         {
             //if (_shouldUpdate)
@@ -171,27 +152,23 @@ namespace RecognizerTestApp
             //    return;
             //}
 
-            if (!RecognizingTextInProgress)
+            if (!_recognizingTextInProgress)
             {
+                _recognizingTextInProgress = true;
                 await Task.Factory.StartNew(RecognizeText);
+                _overlayView.ForceLayout();
             }
         }
 
-        
-
         private async Task RecognizeText()
         {
-            RecognizingTextInProgress = true;
+            //Stopwatch timer = Stopwatch.StartNew();
 
             Bitmap updatedBitmap = _textureView.GetBitmap(_textureView.Bitmap.Width, _textureView.Bitmap.Height);
 
             updatedBitmap.GetPixels(_bitmapPixelArray, 0, _previewSize.Width, 0, 0, _previewSize.Width, _previewSize.Height);
 
-            // List<Color> applicableColors = new List<Color>();
-
             GetCroppingBoundingBox(_previewSize.Height, _previewSize.Width);
-
-            var overlayWasHidden = _overlayView.Rect == null;
 
             _overlayView.Rect = null;
 
@@ -206,21 +183,19 @@ namespace RecognizerTestApp
                 {
                     matrix.PostRotate(90);
 
-                    croppedBitmap = 
-                        Bitmap.CreateBitmap(updatedBitmap, 
+                    croppedBitmap =
+                        Bitmap.CreateBitmap(updatedBitmap,
                             _bBox.Left > searchBuffer ? _bBox.Left - searchBuffer : _bBox.Left,
-                            _bBox.Top > searchBuffer ? _bBox.Top - searchBuffer : _bBox.Top, 
-                            _bBox.Width() + searchBuffer <= _previewSize.Width  ? _bBox.Width() + searchBuffer : _bBox.Width(),
-                            _bBox.Height() + searchBuffer <= _previewSize.Height ? _bBox.Height() + searchBuffer : _bBox.Height(), 
-                            matrix, 
+                            _bBox.Top > searchBuffer ? _bBox.Top - searchBuffer : _bBox.Top,
+                            _bBox.Width() + searchBuffer <= _previewSize.Width ? _bBox.Width() + searchBuffer : _bBox.Width(),
+                            _bBox.Height() + searchBuffer <= _previewSize.Height ? _bBox.Height() + searchBuffer : _bBox.Height(),
+                            matrix,
                             false);
                 }
 
                 await TesseractTextRecognizing(croppedBitmap);
 
                 croppedBitmap.Dispose();
-                updatedBitmap.Dispose();
-
                 //var image = FirebaseVisionImage.FromBitmap(cropped);
 
                 //if (_redrawCount > 5)
@@ -235,17 +210,15 @@ namespace RecognizerTestApp
                 //}
             }
 
-            if (overlayWasHidden && _overlayView.Rect == null)
-            {
-                return;
-            }
+            updatedBitmap.Dispose();
 
-            _overlayView.ForceLayout();
+            //timer.Stop();
+            //TimeSpan timespan = timer.Elapsed;
 
-            RecognizingTextInProgress = false;
+            _recognizingTextInProgress = false;
         }
 
-        private async System.Threading.Tasks.Task TesseractTextRecognizing(Bitmap croppedBitmap)
+        private async Task TesseractTextRecognizing(Bitmap croppedBitmap)
         {
             if (_tesseractApi != null && _tesseractApi.Initialized)
             {
@@ -323,7 +296,7 @@ namespace RecognizerTestApp
 
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
-            _bBox.SetEmpty();
+            _bBox.Set(int.MaxValue,int.MaxValue,int.MinValue,int.MinValue);
 
             for (var j = 0; j < updateBitmapHeight; j++)
             {
