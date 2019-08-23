@@ -61,7 +61,7 @@ namespace RecognizerTestApp
 
            // Canvas canvas = _textureView.LockCanvas();
             if (canvas != null && Rect != null &&
-                Rect.Right > Rect.Left && Rect.Bottom > Rect.Top)
+                !Rect.IsEmpty)
             {
                 _paint.StrokeWidth = _strokeWidth;
 

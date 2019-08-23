@@ -44,6 +44,25 @@ namespace RecognizerTestApp
         }
     }
 
+    public class RecognitionResult
+    {
+        public string ResultText { get; set; }
+        public double Quality { get; set; }
+        public Rect BoundingBox { get; set; }
+
+        public RecognitionResult()
+        {
+            Invalidate();
+        }
+
+        public void Invalidate()
+        {
+            ResultText = string.Empty;
+            Quality = 0;
+            BoundingBox = new Rect(int.MaxValue, int.MaxValue, int.MinValue, int.MinValue);
+        }
+    }
+
     [Activity(Label = "@string/app_name", MainLauncher = true, Theme = "@style/Theme.AppCompat.Light.NoActionBar")]
     public class MainActivity : AppCompatActivity, TextureView.ISurfaceTextureListener
     {
@@ -53,8 +72,16 @@ namespace RecognizerTestApp
 
         public volatile bool _recognizingTextInProgress;
 
-        private readonly int _accuracy = 10;
+        private const int PRIMARY_ACCURACY = 15;
+        private const int BIGGER_ACCURACY = 20;
+        private const int SMALLER_ACCURACY = 10;
+
+        private int _currentAccuracy = PRIMARY_ACCURACY;
+
         private readonly Rect _bBox = new Rect();
+
+        readonly RecognitionResult _tempRecognitionResult = new RecognitionResult();
+        readonly RecognitionResult _finalRecognitionResult = new RecognitionResult();
 
         private Camera _camera;
 
@@ -168,16 +195,59 @@ namespace RecognizerTestApp
 
             updatedBitmap.GetPixels(_bitmapPixelArray, 0, _previewSize.Width, 0, 0, _previewSize.Width, _previewSize.Height);
 
-            GetCroppingBoundingBox(_previewSize.Height, _previewSize.Width);
+            _tempRecognitionResult.Invalidate();
+            _finalRecognitionResult.Invalidate();
 
-            _overlayView.Rect = null;
+            _currentAccuracy = PRIMARY_ACCURACY;
+
+            await PerformRecognizing(updatedBitmap);
+
+            UpdateFinalRecognitionResult();
+
+            if (_tempRecognitionResult.Quality > 50 && _tempRecognitionResult.Quality < 70)
+            {
+                _currentAccuracy = BIGGER_ACCURACY;
+                await PerformRecognizing(updatedBitmap);
+
+                if (_tempRecognitionResult.Quality > _finalRecognitionResult.Quality)
+                {
+                    UpdateFinalRecognitionResult();
+                }
+                else if (_tempRecognitionResult.Quality > 50 && _tempRecognitionResult.Quality < 70)
+                {
+                    _currentAccuracy = SMALLER_ACCURACY;
+                    await PerformRecognizing(updatedBitmap);
+
+                    if (_tempRecognitionResult.Quality > _finalRecognitionResult.Quality)
+                    {
+                        UpdateFinalRecognitionResult();
+                    }
+                }
+            }
+
+            _overlayView.Rect = new Rect(_finalRecognitionResult.BoundingBox);
+            updatedBitmap.Dispose();
+
+            //timer.Stop();
+            //TimeSpan timespan = timer.Elapsed;
+
+            _textView.Text = $"Качество: {_finalRecognitionResult.Quality}%";
+            _recognizingTextInProgress = false;
+        }
+
+        private void UpdateFinalRecognitionResult()
+        {
+            _finalRecognitionResult.Quality = _tempRecognitionResult.Quality;
+            _finalRecognitionResult.ResultText = _tempRecognitionResult.ResultText;
+            _finalRecognitionResult.BoundingBox = new Rect(_tempRecognitionResult.BoundingBox);
+        }
+
+        private async Task PerformRecognizing(Bitmap updatedBitmap)
+        {
+            GetCroppingBoundingBox(_previewSize.Height, _previewSize.Width);
 
             if (!_bBox.IsEmpty)
             {
-                var searchBuffer = 10;
-
-                _overlayView.Rect = new Rect(_previewSize.Height - _bBox.Bottom, _bBox.Left, _previewSize.Height - _bBox.Top, _bBox.Right);
-
                 Bitmap croppedBitmap;
                 using (var matrix = new Matrix())
                 {
@@ -185,10 +255,10 @@ namespace RecognizerTestApp
 
                     croppedBitmap =
                         Bitmap.CreateBitmap(updatedBitmap,
-                            _bBox.Left > searchBuffer ? _bBox.Left - searchBuffer : _bBox.Left,
-                            _bBox.Top > searchBuffer ? _bBox.Top - searchBuffer : _bBox.Top,
-                            _bBox.Width() + searchBuffer <= _previewSize.Width ? _bBox.Width() + searchBuffer : _bBox.Width(),
-                            _bBox.Height() + searchBuffer <= _previewSize.Height ? _bBox.Height() + searchBuffer : _bBox.Height(),
+                            _bBox.Left,
+                            _bBox.Top,
+                            _bBox.Width(),
+                            _bBox.Height(),
                             matrix,
                             false);
                 }
@@ -209,13 +279,10 @@ namespace RecognizerTestApp
                 //    _redrawCount = 0;
                 //}
             }
-
-            updatedBitmap.Dispose();
-
-            //timer.Stop();
-            //TimeSpan timespan = timer.Elapsed;
-
-            _recognizingTextInProgress = false;
+            else
+            {
+                _tempRecognitionResult.Invalidate();
+            }
         }
 
         private async Task TesseractTextRecognizing(Bitmap croppedBitmap)
@@ -224,16 +291,19 @@ namespace RecognizerTestApp
             {
                 var success = await _tesseractApi.Recognise(croppedBitmap);
 
+                double quality = 0;
+                string text = "";
+
                 if (success && _tesseractApi.Text.Length < 160)
                 {
-                    string text = _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower();
-
-                    var diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
-
-                    double quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
-
-                    _textView.Text = $"Качество: {quality}%";
+                    text = _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower();
+                    double diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
+                    quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
                 }
+
+                _tempRecognitionResult.ResultText = text;
+                _tempRecognitionResult.Quality = quality;
+                _tempRecognitionResult.BoundingBox = new Rect(_bBox);
             }
         }
 
@@ -289,8 +359,6 @@ namespace RecognizerTestApp
                 var diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
 
                 var quality = (double) (_referenceString.Length - diff) / _referenceString.Length * 100;
-
-                _textView.Text = $"Качество: {quality}%";
             }
         }
 
@@ -306,37 +374,39 @@ namespace RecognizerTestApp
 
                     var red = Color.GetRedComponent(pixelColor);
 
-                    // applicableColors.AddRange(_referenceColors.Where(x => Math.Abs(x.R - red) < _accuracy));
+                    // applicableColors.AddRange(_referenceColors.Where(x => Math.Abs(x.R - red) < _currentAccuracy));
 
-                    if (Math.Abs(_referenceColor.R - red) >= _accuracy)
-                        //  if (!applicableColors.Any())
-                        continue;
+                    //if (Math.Abs(_referenceColor.R - red) >= _currentAccuracy)
+                    //    //  if (!applicableColors.Any())
+                    //    continue;
 
                     var green = Color.GetGreenComponent(pixelColor);
 
-                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.G - green) >= _accuracy)).ToList();
+                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.G - green) >= _currentAccuracy)).ToList();
 
 
-                    if (Math.Abs(_referenceColor.G - green) >= _accuracy)
-                        //if (!applicableColors.Any())
-                        continue;
+                    //if (Math.Abs(_referenceColor.G - green) >= _currentAccuracy)
+                    //    //if (!applicableColors.Any())
+                    //    continue;
 
                     var blue = Color.GetBlueComponent(pixelColor);
 
-                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.B - blue) >= _accuracy)).ToList();
+                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.B - blue) >= _currentAccuracy)).ToList();
 
+                    //if (Math.Abs(_referenceColor.B - green) >= _currentAccuracy)
+                    //    //if (!applicableColors.Any())
+                    //    continue;
 
-                    if (Math.Abs(_referenceColor.B - green) >= _accuracy)
-                        //if (!applicableColors.Any())
-                        continue;
+                    var dbl_test_red = Math.Pow(((double)_referenceColor.R - red), 2.0);
+                    var dbl_test_green = Math.Pow(((double)_referenceColor.G - green), 2.0);
+                    var dbl_test_blue = Math.Pow(((double)_referenceColor.B - blue), 2.0);
 
-                    UpdateBoundingBox(i, j);
+                    var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
 
-                    //var dbl_test_red = Math.Pow(((double)referenceColorR - red), 2.0);
-                    //var dbl_test_green = Math.Pow(((double)referenceColorG - green), 2.0);
-                    //var dbl_test_blue = Math.Pow(((double)referenceColorB - blue), 2.0);
-
-                    //var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
+                    if (distance < _currentAccuracy)
+                    {
+                        UpdateBoundingBox(i, j);
+                    }
                 }
             }
         }
