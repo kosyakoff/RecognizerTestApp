@@ -14,6 +14,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
+using Firebase.ML.Vision;
+using Firebase.ML.Vision.Common;
 using Tesseract.Droid;
 using Camera = Android.Hardware.Camera;
 using Environment = Android.OS.Environment;
@@ -31,10 +34,12 @@ namespace RecognizerTestApp
 
         public void OnComplete(Android.Gms.Tasks.Task task)
         {
+
         }
 
         public void OnFailure(Exception e)
         {
+            TextRecognized?.Invoke(this, string.Empty);
         }
 
         public void OnSuccess(Object result)
@@ -269,21 +274,14 @@ namespace RecognizerTestApp
                             false);
                 }
 
-                await TesseractTextRecognizing(croppedBitmap);
+                //await TesseractTextRecognizing(croppedBitmap);
+
+                await FirebaseTextRecognizing(croppedBitmap);
+
+                //ExportBitmapAsPNG(cropped);
 
                 croppedBitmap.Dispose();
-                //var image = FirebaseVisionImage.FromBitmap(cropped);
-
-                //if (_redrawCount > 5)
-                //{
-                //    var task = _firebaseVisionTextDetector.ProcessImage(image);
-                //    task.AddOnSuccessListener(_firebaseProcessImageListener);
-                //    task.AddOnCompleteListener(_firebaseProcessImageListener);
-                //    task.AddOnFailureListener(_firebaseProcessImageListener);
-
-                //    //ExportBitmapAsPNG(cropped);
-                //    _redrawCount = 0;
-                //}
+               
             }
             else
             {
@@ -291,26 +289,58 @@ namespace RecognizerTestApp
             }
         }
 
+        private async Task FirebaseTextRecognizing(Bitmap croppedBitmap)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+
+            void OnTextRecognized(object sender, string recognizedText)
+            {
+                // do some sht
+                _firebaseProcessImageListener.TextRecognized -= OnTextRecognized;
+
+                recognizedText = recognizedText.Replace("\n", "").Replace(" ", "").ToLower();
+
+                SetRecognitionResultFromText(recognizedText.Length < 160 ? recognizedText : string.Empty);
+
+                tcs.SetResult(true);
+            }
+
+            _firebaseProcessImageListener.TextRecognized += OnTextRecognized;
+
+            var image = FirebaseVisionImage.FromBitmap(croppedBitmap);
+
+            var task = _firebaseVisionTextDetector.ProcessImage(image);
+            task.AddOnSuccessListener(_firebaseProcessImageListener);
+            task.AddOnCompleteListener(_firebaseProcessImageListener);
+            task.AddOnFailureListener(_firebaseProcessImageListener);
+
+            await tcs.Task;
+        }
+
         private async Task TesseractTextRecognizing(Bitmap croppedBitmap)
         {
             if (_tesseractApi != null && _tesseractApi.Initialized)
             {
                 var success = await _tesseractApi.Recognise(croppedBitmap);
+                var text = success ? _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower() : string.Empty;
 
-                double quality = 0;
-                string text = "";
-
-                if (success && _tesseractApi.Text.Length < 160)
-                {
-                    text = _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower();
-                    double diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
-                    quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
-                }
-
-                _tempRecognitionResult.ResultText = text;
-                _tempRecognitionResult.Quality = quality;
-                _tempRecognitionResult.BoundingBox = new Rect(_bBox);
+                SetRecognitionResultFromText(text.Length < 160 ? text : string.Empty);
             }
+        }
+
+        private void SetRecognitionResultFromText(string text)
+        {
+            double quality = 0;
+
+            if (text.Length > 0)
+            {
+                double diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
+                quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
+            }
+
+            _tempRecognitionResult.ResultText = text;
+            _tempRecognitionResult.Quality = quality;
+            _tempRecognitionResult.BoundingBox = new Rect(_bBox);
         }
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -318,7 +348,7 @@ namespace RecognizerTestApp
             base.OnCreate(savedInstanceState);
 
             // Set our view from the "main" layout resource
-            //_defaultFirebaseApp = FirebaseApp.InitializeApp(ApplicationContext);
+            _defaultFirebaseApp = FirebaseApp.InitializeApp(ApplicationContext);
 
             SetContentView(Resource.Layout.activity_main);
             _textView = FindViewById<TextView>(Resource.Id.text_view);
@@ -344,28 +374,15 @@ namespace RecognizerTestApp
                 ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Internet},
                     REQUEST_INTERNET_ID);
 
-            //_firebaseProcessImageListener = new ProcessImageListener();
-            //_firebaseProcessImageListener.FirebaseTextRecognized += FirebaseTextRecognized;
+            _firebaseProcessImageListener = new ProcessImageListener();
 
-            //var options = new FirebaseVisionCloudTextRecognizerOptions.Builder()
-            //    .SetLanguageHints(new List<string> {"ru"})
-            //    .SetModelType(FirebaseVisionCloudTextRecognizerOptions.DenseModel)
-            //    .Build();
+            var options = new FirebaseVisionCloudTextRecognizerOptions.Builder()
+                .SetLanguageHints(new List<string> { "ru" })
+                .SetModelType(FirebaseVisionCloudTextRecognizerOptions.DenseModel)
+                .Build();
 
-            //_firebaseVisionTextDetector =
-            //    FirebaseVision.GetInstance(_defaultFirebaseApp).GetCloudTextRecognizer(options);
-        }
-
-        private void FirebaseTextRecognized(object sender, string text)
-        {
-            if (text.Length < 160)
-            {
-                text = text.Replace("\n", "").Replace(" ", "").ToLower();
-
-                var diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
-
-                var quality = (double) (_referenceString.Length - diff) / _referenceString.Length * 100;
-            }
+            _firebaseVisionTextDetector =
+                FirebaseVision.GetInstance(_defaultFirebaseApp).GetCloudTextRecognizer(options);
         }
 
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
