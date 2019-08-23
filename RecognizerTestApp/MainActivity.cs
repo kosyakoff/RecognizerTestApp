@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Timers;
-using Android;
+﻿using Android;
 using Android.App;
 using Android.Content.PM;
-using Android.Gms.Tasks;
 using Android.Graphics;
 using Android.OS;
 using Android.Support.V4.App;
@@ -14,25 +9,26 @@ using Android.Support.V7.App;
 using Android.Views;
 using Android.Widget;
 using Firebase;
-using Firebase.ML.Vision;
-using Firebase.ML.Vision.Common;
 using Firebase.ML.Vision.Text;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using Tesseract.Droid;
 using Camera = Android.Hardware.Camera;
-using Console = System.Console;
 using Environment = Android.OS.Environment;
 using Exception = Java.Lang.Exception;
-using IOException = Java.IO.IOException;
 using Object = Java.Lang.Object;
 using Path = System.IO.Path;
+using Task = System.Threading.Tasks.Task;
 
 namespace RecognizerTestApp
 {
-    public class ProcessImageListener : Object, IOnSuccessListener, IOnCompleteListener, IOnFailureListener
+    public class ProcessImageListener : Object, Android.Gms.Tasks.IOnSuccessListener, 
+        Android.Gms.Tasks.IOnCompleteListener, Android.Gms.Tasks.IOnFailureListener
     {
         public EventHandler<string> TextRecognized;
 
-        public void OnComplete(Task task)
+        public void OnComplete(Android.Gms.Tasks.Task task)
         {
         }
 
@@ -54,11 +50,28 @@ namespace RecognizerTestApp
         private const int REQUEST_WRITE_ID = 1002;
         private const int REQUEST_INTERNET_ID = 1003;
 
+        private readonly object _recognizeTaskLocker = new object();
+
+        public bool RecognizingTextInProgress
+        {
+            get
+            {
+                lock (_recognizeTaskLocker)
+                {
+                    return _recognizingTextInProgress;
+                }
+            }
+            set
+            {
+                lock (_recognizeTaskLocker)
+                {
+                    _recognizingTextInProgress = value;
+                }
+            }
+        }
+
         private readonly int _accuracy = 10;
-        private int _maxX = int.MinValue;
-        private int _maxY = int.MinValue;
-        private int _minX = int.MaxValue;
-        private int _minY = int.MaxValue;
+        private readonly Rect _bBox = new Rect();
 
         private Camera _camera;
 
@@ -83,16 +96,16 @@ namespace RecognizerTestApp
         private readonly string _referenceString =
             "рного тел ется, что и помощи  й можно п т в четыр ли овладе".Replace(" ", "").ToLower();
 
-        private bool _shouldUpdate = true;
+       // private bool _shouldUpdate = true;
 
         private TextureView _textureView;
         private TextView _textView;
         private OverlayView _overlayView;
 
-        private readonly Timer _updateTimer = new Timer(500)
-        {
-            AutoReset = false
-        };
+        //private readonly Timer _updateTimer = new Timer(500)
+        //{
+        //    AutoReset = false
+        //};
 
         private int _redrawCount;
 
@@ -142,23 +155,33 @@ namespace RecognizerTestApp
             // camera takes care of this
         }
 
+        private bool _recognizingTextInProgress = false;
+
         public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
         {
-            if (_shouldUpdate)
-            {
-                _updateTimer.Start();
-                _shouldUpdate = false;
-                _redrawCount++;
-            }
-            else
-            {
-                return;
-            }
+            //if (_shouldUpdate)
+            //{
+            //    _updateTimer.Start();
+            //    _shouldUpdate = false;
+            //    _redrawCount++;
+            //    _textView.Text = $"Качество: 0%";
+            //}
+            //else
+            //{
+            //    return;
+            //}
 
-            _minX = int.MaxValue;
-            _maxX = int.MinValue;
-            _minY = int.MaxValue;
-            _maxY = int.MinValue;
+            if (!RecognizingTextInProgress)
+            {
+                await Task.Factory.StartNew(RecognizeText);
+            }
+        }
+
+        
+
+        private async Task RecognizeText()
+        {
+            RecognizingTextInProgress = true;
 
             Bitmap updatedBitmap = _textureView.GetBitmap(_textureView.Bitmap.Width, _textureView.Bitmap.Height);
 
@@ -172,28 +195,26 @@ namespace RecognizerTestApp
 
             _overlayView.Rect = null;
 
-            if (_maxX > _minX && _maxY > _minY)
+            if (!_bBox.IsEmpty)
             {
                 var searchBuffer = 10;
 
-                _overlayView.Rect = new Rect(_previewSize.Height - _maxY, _minX, _previewSize.Height - _minY, _maxX);
+                _overlayView.Rect = new Rect(_previewSize.Height - _bBox.Bottom, _bBox.Left, _previewSize.Height - _bBox.Top, _bBox.Right);
 
-                var matrix = new Matrix();
-                matrix.PostRotate(90);
+                Bitmap croppedBitmap;
+                using (var matrix = new Matrix())
+                {
+                    matrix.PostRotate(90);
 
-                var width = _maxX - _minX;
-                var height = _maxY - _minY;
-
-                var croppedBitmap = Bitmap.CreateBitmap(
-                    updatedBitmap,
-                    _minX > searchBuffer ? _minX - searchBuffer : _minX,
-                    _minY > searchBuffer ? _minY - searchBuffer : _minY,
-                    _minX + width <= _previewSize.Width - searchBuffer ? _maxX - _minX + searchBuffer : _maxX - _minX,
-                    _minY + height <= _previewSize.Height - searchBuffer ? _maxY - _minY + searchBuffer : _maxY - _minY,
-                    matrix,
-                    false);
-
-                matrix.Dispose();
+                    croppedBitmap = 
+                        Bitmap.CreateBitmap(updatedBitmap, 
+                            _bBox.Left > searchBuffer ? _bBox.Left - searchBuffer : _bBox.Left,
+                            _bBox.Top > searchBuffer ? _bBox.Top - searchBuffer : _bBox.Top, 
+                            _bBox.Width() + searchBuffer <= _previewSize.Width  ? _bBox.Width() + searchBuffer : _bBox.Width(),
+                            _bBox.Height() + searchBuffer <= _previewSize.Height ? _bBox.Height() + searchBuffer : _bBox.Height(), 
+                            matrix, 
+                            false);
+                }
 
                 await TesseractTextRecognizing(croppedBitmap);
 
@@ -220,6 +241,8 @@ namespace RecognizerTestApp
             }
 
             _overlayView.ForceLayout();
+
+            RecognizingTextInProgress = false;
         }
 
         private async System.Threading.Tasks.Task TesseractTextRecognizing(Bitmap croppedBitmap)
@@ -256,7 +279,7 @@ namespace RecognizerTestApp
 
             _textureView.SurfaceTextureListener = this;
 
-            _updateTimer.Elapsed += (sender, e) => { _shouldUpdate = true; };
+            //_updateTimer.Elapsed += (sender, e) => { _shouldUpdate = true; };
 
             if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.Camera) != Permission.Granted)
                 ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Camera},
@@ -300,6 +323,8 @@ namespace RecognizerTestApp
 
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
+            _bBox.SetEmpty();
+
             for (var j = 0; j < updateBitmapHeight; j++)
             {
                 for (var i = 0; i < updateBitmapWidth; i++)
@@ -345,15 +370,15 @@ namespace RecognizerTestApp
 
         private void UpdateBoundingBox(int x, int y)
         {
-            if (_minX > x)
-                _minX = x;
-            if (_maxX < x)
-                _maxX = x;
+            if (_bBox.Left > x)
+                _bBox.Left = x;
+            if (_bBox.Right < x)
+                _bBox.Right = x;
 
-            if (_minY > y)
-                _minY = y;
-            if (_maxY < y)
-                _maxY = y;
+            if (_bBox.Top > y)
+                _bBox.Top = y;
+            if (_bBox.Bottom < y)
+                _bBox.Bottom = y;
         }
 
         //public static Bitmap RotateBitmap(Bitmap source, float angle)
