@@ -66,8 +66,7 @@ namespace RecognizerTestApp
         private FirebaseVisionTextRecognizer _firebaseVisionTextDetector;
         private ProcessImageListener _firebaseProcessImageListener;
 
-        private OverlayView _overlayView;
-        private int[] _pixelArray;
+        private int[] _bitmapPixelArray;
         private Camera.Size _previewSize;
 
         private TesseractApi _tesseractApi;
@@ -88,8 +87,7 @@ namespace RecognizerTestApp
 
         private TextureView _textureView;
         private TextView _textView;
-
-        private Bitmap _updateBitmap;
+        private OverlayView _overlayView;
 
         private readonly Timer _updateTimer = new Timer(500)
         {
@@ -110,25 +108,19 @@ namespace RecognizerTestApp
             if (_camera == null)
                 _camera = Camera.Open(0);
 
-            var pars = _camera.GetParameters();
-            pars.FocusMode = Camera.Parameters.FocusModeContinuousPicture;
-            _camera.SetParameters(pars);
+            var cameraParams = _camera.GetParameters();
+            cameraParams.FocusMode = Camera.Parameters.FocusModeContinuousPicture;
+            _camera.SetParameters(cameraParams);
 
             _previewSize = _camera.GetParameters().PreviewSize;
+
             _textureView.LayoutParameters =
                 new FrameLayout.LayoutParams(_previewSize.Width, _previewSize.Height, GravityFlags.Center);
 
-            _pixelArray = new int[_previewSize.Width * _previewSize.Height];
+            _bitmapPixelArray = new int[_previewSize.Width * _previewSize.Height];
 
-            try
-            {
-                _camera.SetPreviewTexture(surface);
-                _camera.StartPreview();
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            _camera.SetPreviewTexture(surface);
+            _camera.StartPreview();
 
             _textureView.Rotation = 90.0f;
 
@@ -168,19 +160,18 @@ namespace RecognizerTestApp
             _minY = int.MaxValue;
             _maxY = int.MinValue;
 
-            _updateBitmap = _textureView.GetBitmap(_textureView.Bitmap.Width, _textureView.Bitmap.Height);
+            Bitmap updatedBitmap = _textureView.GetBitmap(_textureView.Bitmap.Width, _textureView.Bitmap.Height);
 
-            _updateBitmap.GetPixels(_pixelArray, 0, _previewSize.Width, 0, 0, _previewSize.Width, _previewSize.Height);
-
-            var updateBitmapHeight = _previewSize.Height;
-            var updateBitmapWidth = _previewSize.Width;
+            updatedBitmap.GetPixels(_bitmapPixelArray, 0, _previewSize.Width, 0, 0, _previewSize.Width, _previewSize.Height);
 
             // List<Color> applicableColors = new List<Color>();
 
-            GetBoundingBox(updateBitmapHeight, updateBitmapWidth);
+            GetCroppingBoundingBox(_previewSize.Height, _previewSize.Width);
 
             var overlayWasHidden = _overlayView.Rect == null;
+
             _overlayView.Rect = null;
+
             if (_maxX > _minX && _maxY > _minY)
             {
                 var searchBuffer = 10;
@@ -192,8 +183,9 @@ namespace RecognizerTestApp
 
                 var width = _maxX - _minX;
                 var height = _maxY - _minY;
-                var cropped = Bitmap.CreateBitmap(
-                    _updateBitmap,
+
+                var croppedBitmap = Bitmap.CreateBitmap(
+                    updatedBitmap,
                     _minX > searchBuffer ? _minX - searchBuffer : _minX,
                     _minY > searchBuffer ? _minY - searchBuffer : _minY,
                     _minX + width <= _previewSize.Width - searchBuffer ? _maxX - _minX + searchBuffer : _maxX - _minX,
@@ -201,21 +193,12 @@ namespace RecognizerTestApp
                     matrix,
                     false);
 
+                matrix.Dispose();
 
-                if (_tesseractApi != null && _tesseractApi.Initialized)
-                {
-                    var success = await _tesseractApi.Recognise(cropped);
-                    if (success && _tesseractApi.Text.Length < 160)
-                    {
-                        string text = _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower();
+                await TesseractTextRecognizing(croppedBitmap);
 
-                        var diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
-
-                        double quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
-
-                        _textView.Text = $"Качество: {quality}%";
-                    }
-                }
+                croppedBitmap.Dispose();
+                updatedBitmap.Dispose();
 
                 //var image = FirebaseVisionImage.FromBitmap(cropped);
 
@@ -231,8 +214,31 @@ namespace RecognizerTestApp
                 //}
             }
 
-            if (overlayWasHidden && _overlayView.Rect == null) return;
+            if (overlayWasHidden && _overlayView.Rect == null)
+            {
+                return;
+            }
+
             _overlayView.ForceLayout();
+        }
+
+        private async System.Threading.Tasks.Task TesseractTextRecognizing(Bitmap croppedBitmap)
+        {
+            if (_tesseractApi != null && _tesseractApi.Initialized)
+            {
+                var success = await _tesseractApi.Recognise(croppedBitmap);
+
+                if (success && _tesseractApi.Text.Length < 160)
+                {
+                    string text = _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower();
+
+                    var diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
+
+                    double quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
+
+                    _textView.Text = $"Качество: {quality}%";
+                }
+            }
         }
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -267,7 +273,7 @@ namespace RecognizerTestApp
                     REQUEST_INTERNET_ID);
 
             //_firebaseProcessImageListener = new ProcessImageListener();
-            //_firebaseProcessImageListener.TextRecognized += TextRecognized;
+            //_firebaseProcessImageListener.FirebaseTextRecognized += FirebaseTextRecognized;
 
             //var options = new FirebaseVisionCloudTextRecognizerOptions.Builder()
             //    .SetLanguageHints(new List<string> {"ru"})
@@ -278,7 +284,7 @@ namespace RecognizerTestApp
             //    FirebaseVision.GetInstance(_defaultFirebaseApp).GetCloudTextRecognizer(options);
         }
 
-        private void TextRecognized(object sender, string text)
+        private void FirebaseTextRecognized(object sender, string text)
         {
             if (text.Length < 160)
             {
@@ -292,46 +298,48 @@ namespace RecognizerTestApp
             }
         }
 
-        private void GetBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
+        private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
             for (var j = 0; j < updateBitmapHeight; j++)
-            for (var i = 0; i < updateBitmapWidth; i++)
             {
-                var pixelColor = _pixelArray[j * updateBitmapWidth + i];
+                for (var i = 0; i < updateBitmapWidth; i++)
+                {
+                    var pixelColor = _bitmapPixelArray[j * updateBitmapWidth + i];
 
-                var red = Color.GetRedComponent(pixelColor);
+                    var red = Color.GetRedComponent(pixelColor);
 
-                // applicableColors.AddRange(_referenceColors.Where(x => Math.Abs(x.R - red) < _accuracy));
+                    // applicableColors.AddRange(_referenceColors.Where(x => Math.Abs(x.R - red) < _accuracy));
 
-                if (Math.Abs(_referenceColor.R - red) >= _accuracy)
-                    //  if (!applicableColors.Any())
-                    continue;
+                    if (Math.Abs(_referenceColor.R - red) >= _accuracy)
+                        //  if (!applicableColors.Any())
+                        continue;
 
-                var green = Color.GetGreenComponent(pixelColor);
+                    var green = Color.GetGreenComponent(pixelColor);
 
-                //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.G - green) >= _accuracy)).ToList();
-
-
-                if (Math.Abs(_referenceColor.G - green) >= _accuracy)
-                    //if (!applicableColors.Any())
-                    continue;
-
-                var blue = Color.GetBlueComponent(pixelColor);
-
-                //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.B - blue) >= _accuracy)).ToList();
+                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.G - green) >= _accuracy)).ToList();
 
 
-                if (Math.Abs(_referenceColor.B - green) >= _accuracy)
-                    //if (!applicableColors.Any())
-                    continue;
+                    if (Math.Abs(_referenceColor.G - green) >= _accuracy)
+                        //if (!applicableColors.Any())
+                        continue;
 
-                UpdateBoundingBox(i, j);
+                    var blue = Color.GetBlueComponent(pixelColor);
 
-                //var dbl_test_red = Math.Pow(((double)referenceColorR - red), 2.0);
-                //var dbl_test_green = Math.Pow(((double)referenceColorG - green), 2.0);
-                //var dbl_test_blue = Math.Pow(((double)referenceColorB - blue), 2.0);
+                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.B - blue) >= _accuracy)).ToList();
 
-                //var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
+
+                    if (Math.Abs(_referenceColor.B - green) >= _accuracy)
+                        //if (!applicableColors.Any())
+                        continue;
+
+                    UpdateBoundingBox(i, j);
+
+                    //var dbl_test_red = Math.Pow(((double)referenceColorR - red), 2.0);
+                    //var dbl_test_green = Math.Pow(((double)referenceColorG - green), 2.0);
+                    //var dbl_test_blue = Math.Pow(((double)referenceColorB - blue), 2.0);
+
+                    //var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
+                }
             }
         }
 
