@@ -17,6 +17,7 @@ using Firebase;
 using Firebase.ML.Vision;
 using Firebase.ML.Vision.Common;
 using Firebase.ML.Vision.Text;
+using Tesseract.Droid;
 using Camera = Android.Hardware.Camera;
 using Console = System.Console;
 using Environment = Android.OS.Environment;
@@ -52,23 +53,24 @@ namespace RecognizerTestApp
         private const int REQUEST_CAMERA_ID = 1001;
         private const int REQUEST_WRITE_ID = 1002;
         private const int REQUEST_INTERNET_ID = 1003;
-        private static readonly string TAG = "MainActivity";
 
         private readonly int _accuracy = 10;
-        private Camera _camera;
-
-        private FirebaseApp _defaultFirebaseApp;
-
-        private FirebaseVisionTextRecognizer _firebaseVisionTextDetector;
         private int _maxX = int.MinValue;
         private int _maxY = int.MinValue;
         private int _minX = int.MaxValue;
         private int _minY = int.MaxValue;
+
+        private Camera _camera;
+
+        private FirebaseApp _defaultFirebaseApp;
+        private FirebaseVisionTextRecognizer _firebaseVisionTextDetector;
+        private ProcessImageListener _firebaseProcessImageListener;
+
         private OverlayView _overlayView;
         private int[] _pixelArray;
         private Camera.Size _previewSize;
-        private ProcessImageListener _processImageListener;
-        private int _redrawCount;
+
+        private TesseractApi _tesseractApi;
 
         private readonly Color _referenceColor = new Color(65, 113, 127);
 
@@ -94,7 +96,9 @@ namespace RecognizerTestApp
             AutoReset = false
         };
 
-        public void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
+        private int _redrawCount;
+
+        public async void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
         {
             if (Camera.NumberOfCameras == 0)
             {
@@ -127,6 +131,10 @@ namespace RecognizerTestApp
             }
 
             _textureView.Rotation = 90.0f;
+
+            _tesseractApi = new TesseractApi(ApplicationContext, AssetsDeployment.OncePerVersion);
+
+            await _tesseractApi.Init("rus");
         }
 
         public bool OnSurfaceTextureDestroyed(SurfaceTexture surface)
@@ -142,7 +150,7 @@ namespace RecognizerTestApp
             // camera takes care of this
         }
 
-        public void OnSurfaceTextureUpdated(SurfaceTexture surface)
+        public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
         {
             if (_shouldUpdate)
             {
@@ -193,32 +201,46 @@ namespace RecognizerTestApp
                     matrix,
                     false);
 
-                var image = FirebaseVisionImage.FromBitmap(cropped);
 
-
-                if (_redrawCount > 5)
+                if (_tesseractApi != null && _tesseractApi.Initialized)
                 {
-                    var task = _firebaseVisionTextDetector.ProcessImage(image);
-                    task.AddOnSuccessListener(_processImageListener);
-                    task.AddOnCompleteListener(_processImageListener);
-                    task.AddOnFailureListener(_processImageListener);
+                    var success = await _tesseractApi.Recognise(cropped);
+                    if (success && _tesseractApi.Text.Length < 160)
+                    {
+                        string text = _tesseractApi.Text.Replace("\n", "").Replace(" ", "").ToLower();
 
-                    //ExportBitmapAsPNG(cropped);
-                    _redrawCount = 0;
+                        var diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
+
+                        double quality = (((double)(_referenceString.Length - diff)) / _referenceString.Length) * 100;
+
+                        _textView.Text = $"Качество: {quality}%";
+                    }
                 }
+
+                //var image = FirebaseVisionImage.FromBitmap(cropped);
+
+                //if (_redrawCount > 5)
+                //{
+                //    var task = _firebaseVisionTextDetector.ProcessImage(image);
+                //    task.AddOnSuccessListener(_firebaseProcessImageListener);
+                //    task.AddOnCompleteListener(_firebaseProcessImageListener);
+                //    task.AddOnFailureListener(_firebaseProcessImageListener);
+
+                //    //ExportBitmapAsPNG(cropped);
+                //    _redrawCount = 0;
+                //}
             }
 
             if (overlayWasHidden && _overlayView.Rect == null) return;
             _overlayView.ForceLayout();
         }
 
-
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
 
             // Set our view from the "main" layout resource
-            _defaultFirebaseApp = FirebaseApp.InitializeApp(ApplicationContext);
+            //_defaultFirebaseApp = FirebaseApp.InitializeApp(ApplicationContext);
 
             SetContentView(Resource.Layout.activity_main);
             _textView = FindViewById<TextView>(Resource.Id.text_view);
@@ -244,16 +266,16 @@ namespace RecognizerTestApp
                 ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Internet},
                     REQUEST_INTERNET_ID);
 
-            _processImageListener = new ProcessImageListener();
-            _processImageListener.TextRecognized += TextRecognized;
+            //_firebaseProcessImageListener = new ProcessImageListener();
+            //_firebaseProcessImageListener.TextRecognized += TextRecognized;
 
-            var options = new FirebaseVisionCloudTextRecognizerOptions.Builder()
-                .SetLanguageHints(new List<string> {"ru"})
-                .SetModelType(FirebaseVisionCloudTextRecognizerOptions.DenseModel)
-                .Build();
+            //var options = new FirebaseVisionCloudTextRecognizerOptions.Builder()
+            //    .SetLanguageHints(new List<string> {"ru"})
+            //    .SetModelType(FirebaseVisionCloudTextRecognizerOptions.DenseModel)
+            //    .Build();
 
-            _firebaseVisionTextDetector =
-                FirebaseVision.GetInstance(_defaultFirebaseApp).GetCloudTextRecognizer(options);
+            //_firebaseVisionTextDetector =
+            //    FirebaseVision.GetInstance(_defaultFirebaseApp).GetCloudTextRecognizer(options);
         }
 
         private void TextRecognized(object sender, string text)
