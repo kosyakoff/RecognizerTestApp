@@ -61,6 +61,10 @@
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
     <Compile Include="OverlayView.cs" />
+    <Compile Include="ProcessImageListener.cs" />
+    <Compile Include="Providers\ReferenceColorProvider.cs" />
+    <Compile Include="RecognitionResult.cs" />
+    <Compile Include="RecognizingActor.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\RecognizerService.cs" />
