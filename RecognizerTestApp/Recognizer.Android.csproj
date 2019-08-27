@@ -59,6 +59,7 @@
     <Reference Include="Mono.Android" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers\BitmapOperator.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="OverlayView.cs" />
     <Compile Include="ProcessImageListener.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\RecognizerService.cs" />
+    <Compile Include="Settings\GeneralSettings.cs" />
     <Compile Include="StringDistance.cs" />
   </ItemGroup>
   <ItemGroup>

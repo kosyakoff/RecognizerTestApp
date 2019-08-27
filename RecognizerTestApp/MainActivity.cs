@@ -12,6 +12,7 @@ using Android.Views;
 using Android.Widget;
 using Recognizer.Core.Resources.Strings;
 using RecognizerTestApp.Services;
+using RecognizerTestApp.Settings;
 using Camera = Android.Hardware.Camera;
 using Toolbar = Android.Support.V7.Widget.Toolbar;
 
@@ -34,6 +35,7 @@ namespace RecognizerTestApp
         private TextureView _textureView;
         private TextView _textView;
         private Toolbar _toolbar;
+        private ImageView _imageView;
 
         public async void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
         {
@@ -64,6 +66,12 @@ namespace RecognizerTestApp
 
             await _recognizerService.Init(ApplicationContext, new Size(_previewSize.Width, _previewSize.Height));
             _recognizerService.OverlayRectUpdated += RecognizerServiceOverlayRectUpdated;
+            _recognizerService.CroppedImageUpdated += RecognizerServiceCroppedImageUpdated;
+        }
+
+        private void RecognizerServiceCroppedImageUpdated(object sender, Bitmap bitmap)
+        {
+            RunOnUiThread(() => _imageView.SetImageBitmap(bitmap));
         }
 
         public bool OnSurfaceTextureDestroyed(SurfaceTexture surface)
@@ -133,6 +141,13 @@ namespace RecognizerTestApp
             // Set our view from the "main" layout resource
 
             SetContentView(Resource.Layout.activity_main);
+
+            if (GeneralSettings.ShowCroppedImage)
+            {
+                _imageView = FindViewById<ImageView>(Resource.Id.image_view);
+                _imageView.Visibility = ViewStates.Visible;
+            }
+
             _textView = FindViewById<TextView>(Resource.Id.text_view);
 
             _toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
