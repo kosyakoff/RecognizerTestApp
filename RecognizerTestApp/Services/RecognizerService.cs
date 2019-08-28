@@ -162,7 +162,7 @@ namespace RecognizerTestApp.Services
 
             _bitmapPixelArray = new int[_cameraSize.Width * _cameraSize.Height];
 
-            InitFirebase();
+           // InitFirebase();
             await InitTesseract();
 
             IsInitialized = true;
