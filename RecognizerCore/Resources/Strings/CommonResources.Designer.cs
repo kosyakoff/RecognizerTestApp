@@ -104,5 +104,14 @@ namespace Recognizer.Core.Resources.Strings {
                 return ResourceManager.GetString("on_server", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Перезапустить.
+        /// </summary>
+        public static string rerun {
+            get {
+                return ResourceManager.GetString("rerun", resourceCulture);
+            }
+        }
     }
 }

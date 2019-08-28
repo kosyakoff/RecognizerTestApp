@@ -36,6 +36,7 @@ namespace RecognizerTestApp
         private TextView _textView;
         private Toolbar _toolbar;
         private ImageView _imageView;
+        private Button _rerunButton;
 
         public async void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
         {
@@ -67,6 +68,20 @@ namespace RecognizerTestApp
             await _recognizerService.Init(ApplicationContext, new Size(_previewSize.Width, _previewSize.Height));
             _recognizerService.OverlayRectUpdated += RecognizerServiceOverlayRectUpdated;
             _recognizerService.CroppedImageUpdated += RecognizerServiceCroppedImageUpdated;
+            _recognizerService.RecordWasFound += RecognizerServiceRecordWasFound; 
+        }
+
+        private void RecognizerServiceRecordWasFound(object sender, string result)
+        {
+
+            RunOnUiThread(() =>
+            {
+                _rerunButton.Visibility = ViewStates.Visible;
+                _overlayView.Rect = new Rect();
+                _overlayView.ForceLayout();
+                _textView.Text = result;
+            });
+            
         }
 
         private void RecognizerServiceCroppedImageUpdated(object sender, Bitmap bitmap)
@@ -89,7 +104,7 @@ namespace RecognizerTestApp
 
         public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
         {
-            if (_recognizerService.IsInitialized && !_recognizerService.RecognizingTextInProgress)
+            if (_recognizerService.IsInitialized && !_recognizerService.SearchComplete && !_recognizerService.RecognizingTextInProgress)
             {
                 _recognizerService.RecognizingTextInProgress = true;
                 await Task.Factory.StartNew(RecognizeText);
@@ -149,6 +164,14 @@ namespace RecognizerTestApp
             }
 
             _textView = FindViewById<TextView>(Resource.Id.text_view);
+            _rerunButton = FindViewById<Button>(Resource.Id.rerun_button);
+            _rerunButton.Text = CommonResources.rerun;
+            _rerunButton.Click += (obj,e) =>
+            {
+                _rerunButton.Visibility = ViewStates.Invisible;
+                _recognizerService.SearchComplete = false;
+                _textView.Text = string.Empty;
+            };
 
             _toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(_toolbar);
@@ -178,6 +201,7 @@ namespace RecognizerTestApp
         private void RecognizerServiceOverlayRectUpdated(object sender, Rect rect)
         {
             _overlayView.Rect = rect;
+
         }
     }
 }

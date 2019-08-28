@@ -132,4 +132,7 @@
   <data name="on_server" xml:space="preserve">
     <value>На сервере</value>
   </data>
+  <data name="rerun" xml:space="preserve">
+    <value>Перезапустить</value>
+  </data>
 </root>

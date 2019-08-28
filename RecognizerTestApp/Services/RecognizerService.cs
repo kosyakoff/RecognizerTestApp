@@ -59,6 +59,7 @@ namespace RecognizerTestApp.Services
         private const int UPPER_RECOGNITION_VALUE = 79;
 
         public volatile bool RecognizingTextInProgress;
+        public volatile bool SearchComplete;
 
         public volatile bool IsInitialized;
 
@@ -74,6 +75,7 @@ namespace RecognizerTestApp.Services
 
         public event EventHandler<Rect> OverlayRectUpdated;
         public event EventHandler<Bitmap> CroppedImageUpdated;
+        public event EventHandler<string> RecordWasFound;
 
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
@@ -227,6 +229,12 @@ namespace RecognizerTestApp.Services
 
             //timer.Stop();
             //TimeSpan timespan = timer.Elapsed;
+
+            if (_finalRecognitionResult.Quality >= UPPER_RECOGNITION_VALUE)
+            {
+                SearchComplete = true;
+                RecordWasFound?.Invoke(this,_finalRecognitionResult.OriginalText);
+            }
 
             RecognizingTextInProgress = false;
 
