@@ -59,6 +59,8 @@
     <Reference Include="Mono.Android" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ErrorDialog.cs" />
+    <Compile Include="Helpers\AutoFitTextureView.cs" />
     <Compile Include="Helpers\BitmapOperator.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="OverlayView.cs" />

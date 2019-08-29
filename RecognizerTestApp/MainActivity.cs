@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Android;
 using Android.App;
 using Android.Content.PM;
@@ -29,6 +30,7 @@ namespace RecognizerTestApp
 
         private OverlayView _overlayView;
         private Camera.Size _previewSize;
+        private bool _rightCheckInProgress;
 
         private RecognizerService _recognizerService;
 
@@ -37,8 +39,9 @@ namespace RecognizerTestApp
         private Toolbar _toolbar;
         private ImageView _imageView;
         private Button _rerunButton;
+        private SurfaceTexture _surface;
 
-        public async void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
+        public void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
         {
             if (Camera.NumberOfCameras == 0)
             {
@@ -46,6 +49,13 @@ namespace RecognizerTestApp
                 return;
             }
 
+            _surface = surface;
+
+            CheckRights();
+        }
+
+        private async Task MainInit(SurfaceTexture surface)
+        {
             _camera = Camera.Open();
 
             if (_camera == null)
@@ -68,12 +78,11 @@ namespace RecognizerTestApp
             await _recognizerService.Init(ApplicationContext, new Size(_previewSize.Width, _previewSize.Height));
             _recognizerService.OverlayRectUpdated += RecognizerServiceOverlayRectUpdated;
             _recognizerService.CroppedImageUpdated += RecognizerServiceCroppedImageUpdated;
-            _recognizerService.RecordWasFound += RecognizerServiceRecordWasFound; 
+            _recognizerService.RecordWasFound += RecognizerServiceRecordWasFound;
         }
 
         private void RecognizerServiceRecordWasFound(object sender, string result)
         {
-
             RunOnUiThread(() =>
             {
                 _rerunButton.Visibility = ViewStates.Visible;
@@ -166,7 +175,7 @@ namespace RecognizerTestApp
             _textView = FindViewById<TextView>(Resource.Id.text_view);
             _rerunButton = FindViewById<Button>(Resource.Id.rerun_button);
             _rerunButton.Text = CommonResources.rerun;
-            _rerunButton.Click += (obj,e) =>
+            _rerunButton.Click += (obj, e) =>
             {
                 _rerunButton.Visibility = ViewStates.Invisible;
                 _recognizerService.SearchComplete = false;
@@ -182,19 +191,71 @@ namespace RecognizerTestApp
 
             _textureView.SurfaceTextureListener = this;
 
+
+        }
+
+        private void CheckRights()
+        {
             if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.Camera) != Permission.Granted)
-                ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Camera},
+            {
+                _rightCheckInProgress = true;
+                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.Camera },
                     REQUEST_CAMERA_ID);
+                return;
+            }
 
             if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.WriteExternalStorage) !=
                 Permission.Granted)
-                ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.WriteExternalStorage},
+            {
+                _rightCheckInProgress = true;
+                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.WriteExternalStorage },
                     REQUEST_WRITE_ID);
+                return;
+            }
 
             if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.Internet) !=
                 Permission.Granted)
-                ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Internet},
+            {
+                _rightCheckInProgress = true;
+                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.Internet },
                     REQUEST_INTERNET_ID);
+                return;
+            }
+
+            MainInit(_surface);
+        }
+
+        public override async void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+        {
+            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            switch (requestCode)
+            {
+                case REQUEST_CAMERA_ID:
+                    if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
+                    {
+                        ErrorDialog.NewInstance(CommonResources.camera_request_permission)
+                            .Show(this.FragmentManager, "dialog");
+                    }
+                    break;
+
+                case REQUEST_WRITE_ID:
+                    if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
+                    {
+                        ErrorDialog.NewInstance(CommonResources.write_request_permission)
+                            .Show(this.FragmentManager, "dialog");
+                    }
+                    break;
+
+                case REQUEST_INTERNET_ID:
+                    if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
+                    {
+                        ErrorDialog.NewInstance(CommonResources.internet_request_permission)
+                            .Show(this.FragmentManager, "dialog");
+                    }
+                    break;
+            }
+
+            CheckRights();
 
         }
 

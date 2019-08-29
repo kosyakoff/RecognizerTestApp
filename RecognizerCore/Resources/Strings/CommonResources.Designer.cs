@@ -70,11 +70,29 @@ namespace Recognizer.Core.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Нужна камера.
+        /// </summary>
+        public static string camera_request_permission {
+            get {
+                return ResourceManager.GetString("camera_request_permission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Качество.
         /// </summary>
         public static string common_quality {
             get {
                 return ResourceManager.GetString("common_quality", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Нужен интернет.
+        /// </summary>
+        public static string internet_request_permission {
+            get {
+                return ResourceManager.GetString("internet_request_permission", resourceCulture);
             }
         }
         
@@ -111,6 +129,15 @@ namespace Recognizer.Core.Resources.Strings {
         public static string rerun {
             get {
                 return ResourceManager.GetString("rerun", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Нужна запись.
+        /// </summary>
+        public static string write_request_permission {
+            get {
+                return ResourceManager.GetString("write_request_permission", resourceCulture);
             }
         }
     }
