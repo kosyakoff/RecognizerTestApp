@@ -2,7 +2,7 @@
 {
     public static class GeneralSettings
     {
-        public static bool ShowCroppedImage = false;
+        public static bool ShowCroppedImage = true;
 
         public static bool UseProgressiveSearch = true;
 

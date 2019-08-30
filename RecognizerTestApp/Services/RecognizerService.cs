@@ -46,7 +46,7 @@ namespace RecognizerTestApp.Services
         private Context _appContext;
 
         private int[] _bitmapPixelArray;
-        private Size _cameraSize;
+        private Size _textureSize;
 
         private int _currentAccuracy = PRIMARY_ACCURACY;
 
@@ -158,9 +158,9 @@ namespace RecognizerTestApp.Services
         public async Task Init(Context appContext, Size size)
         {
             _appContext = appContext ?? throw new ArgumentNullException(nameof(appContext));
-            _cameraSize = size ?? throw new ArgumentNullException(nameof(size));
+            _textureSize = size ?? throw new ArgumentNullException(nameof(size));
 
-            _bitmapPixelArray = new int[_cameraSize.Width * _cameraSize.Height];
+            _bitmapPixelArray = new int[_textureSize.Width * _textureSize.Height];
 
            // InitFirebase();
             await InitTesseract();
@@ -181,8 +181,8 @@ namespace RecognizerTestApp.Services
 
             _textureViewBitmap = textureViewBitmap;
 
-            _textureViewBitmap.GetPixels(_bitmapPixelArray, 0, _cameraSize.Width, 0, 0, _cameraSize.Width,
-                _cameraSize.Height);
+            _textureViewBitmap.GetPixels(_bitmapPixelArray, 0, _textureSize.Width, 0, 0, _textureSize.Width,
+                _textureSize.Height);
 
             _tempRecognitionResult.Invalidate();
             _finalRecognitionResult.Invalidate();
@@ -218,12 +218,12 @@ namespace RecognizerTestApp.Services
                 }
             }
 
-            var overlayRect = new Rect(
-                _cameraSize.Height - _finalRecognitionResult.BoundingBox.Bottom,
-                _finalRecognitionResult.BoundingBox.Left,
-                _cameraSize.Height - _finalRecognitionResult.BoundingBox.Top,
-                _bBox.Right);
-            OverlayRectUpdated?.Invoke(this, overlayRect);
+            //var overlayRect = new Rect(
+            //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Bottom,
+            //    _finalRecognitionResult.BoundingBox.Left,
+            //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Top,
+            //    _bBox.Right);
+            OverlayRectUpdated?.Invoke(this, _finalRecognitionResult.BoundingBox);
 
             textureViewBitmap.Dispose();
 
@@ -251,7 +251,7 @@ namespace RecognizerTestApp.Services
 
         private async Task PerformRecognizing(Bitmap updatedBitmap)
         {
-            GetCroppingBoundingBox(_cameraSize.Height, _cameraSize.Width);
+            GetCroppingBoundingBox(_textureSize.Height, _textureSize.Width);
 
             if (!_bBox.IsEmpty)
             {
@@ -319,8 +319,8 @@ namespace RecognizerTestApp.Services
         {
             _bBox.Left = _bBox.Left - horVal >= 0 ? _bBox.Left - horVal : _bBox.Left;
             _bBox.Top = _bBox.Top - verVal >= 0 ? _bBox.Top - verVal : _bBox.Top;
-            _bBox.Right = _bBox.Right + horVal < _cameraSize.Width ? _bBox.Right + horVal : _bBox.Right;
-            _bBox.Bottom = _bBox.Bottom + verVal < _cameraSize.Height ? _bBox.Bottom + verVal : _bBox.Bottom;
+            _bBox.Right = _bBox.Right + horVal < _textureSize.Width ? _bBox.Right + horVal : _bBox.Right;
+            _bBox.Bottom = _bBox.Bottom + verVal < _textureSize.Height ? _bBox.Bottom + verVal : _bBox.Bottom;
         }
 
         private async Task FirebaseTextRecognizing(Bitmap croppedBitmap)

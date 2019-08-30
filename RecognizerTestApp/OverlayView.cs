@@ -43,14 +43,6 @@ namespace RecognizerTestApp
             _paint.SetStyle(Paint.Style.Stroke);
             _paint.Color = Color.Yellow;
             _strokeWidth = 10;
-
-            var resourceId = Resources.GetIdentifier("status_bar_height", "dimen", "android");
-            if (resourceId > 0)
-            {
-                _statusBarHeight = Resources.GetDimensionPixelSize(resourceId);
-            }
-
-            _statusBarHeight = 25;
         }
 
         public Rect Rect { get; set; }
@@ -65,7 +57,7 @@ namespace RecognizerTestApp
             {
                 _paint.StrokeWidth = _strokeWidth;
 
-                canvas.DrawRect(Rect.Left - _strokeWidth, Rect.Top - _statusBarHeight - _strokeWidth, Rect.Right + _strokeWidth, Rect.Bottom + _strokeWidth - _statusBarHeight, _paint);
+                canvas.DrawRect(Rect.Left - _strokeWidth, Rect.Top - _strokeWidth, Rect.Right + _strokeWidth, Rect.Bottom + _strokeWidth, _paint);
 
                 //_textureView.UnlockCanvasAndPost(canvas);
             }

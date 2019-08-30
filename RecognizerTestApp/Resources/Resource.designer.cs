@@ -3421,8 +3421,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0075
 			public const int image = 2131492981;
 			
-			// aapt resource value: 0x7f0c00a8
-			public const int image_view = 2131493032;
+			// aapt resource value: 0x7f0c00a9
+			public const int image_view = 2131493033;
 			
 			// aapt resource value: 0x7f0c00c3
 			public const int info = 2131493059;
@@ -3511,8 +3511,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0067
 			public const int outline = 2131492967;
 			
-			// aapt resource value: 0x7f0c00a5
-			public const int overlay_view = 2131493029;
+			// aapt resource value: 0x7f0c00a7
+			public const int overlay_view = 2131493031;
 			
 			// aapt resource value: 0x7f0c005e
 			public const int parallax = 2131492958;
@@ -3535,8 +3535,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c008e
 			public const int radio = 2131493006;
 			
-			// aapt resource value: 0x7f0c00a7
-			public const int rerun_button = 2131493031;
+			// aapt resource value: 0x7f0c00a8
+			public const int rerun_button = 2131493032;
 			
 			// aapt resource value: 0x7f0c005c
 			public const int right = 2131492956;
@@ -3670,8 +3670,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c009f
 			public const int submit_area = 2131493023;
 			
-			// aapt resource value: 0x7f0c00a4
-			public const int surface_view = 2131493028;
+			// aapt resource value: 0x7f0c00a6
+			public const int surface_view = 2131493030;
 			
 			// aapt resource value: 0x7f0c002f
 			public const int tabMode = 2131492911;
@@ -3703,8 +3703,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c00b5
 			public const int text_input_password_toggle = 2131493045;
 			
-			// aapt resource value: 0x7f0c00a9
-			public const int text_view = 2131493033;
+			// aapt resource value: 0x7f0c00a5
+			public const int text_view = 2131493029;
 			
 			// aapt resource value: 0x7f0c0018
 			public const int textinput_counter = 2131492888;
@@ -3727,8 +3727,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0085
 			public const int title_template = 2131492997;
 			
-			// aapt resource value: 0x7f0c00a6
-			public const int toolbar = 2131493030;
+			// aapt resource value: 0x7f0c00a4
+			public const int toolbar = 2131493028;
 			
 			// aapt resource value: 0x7f0c004d
 			public const int top = 2131492941;
