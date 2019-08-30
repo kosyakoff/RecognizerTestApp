@@ -340,31 +340,19 @@ namespace RecognizerTestApp
         {
             _flashOn = !_flashOn;
 
-            if (_flashOn)
+            try
             {
                 var param = _camera.GetParameters();
-                param.FlashMode = Camera.Parameters.FlashModeTorch;
-                try
-                {
-                    _camera.SetParameters(param);
-                }
-                catch (Exception e)
-                {
-                    Toast.MakeText(this, CommonResources.flash_error, ToastLength.Long).Show();
-                }
+
+            param.FlashMode = _flashOn ? Camera.Parameters.FlashModeTorch : Camera.Parameters.FlashModeOff;
+            _camera.SetParameters(param);
+
+   
+
             }
-            else
+            catch (Exception e)
             {
-                var param = _camera.GetParameters();
-                param.FlashMode = Camera.Parameters.FlashModeOff;
-                try
-                {
-                    _camera.SetParameters(param);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine();
-                }
+                Toast.MakeText(this, CommonResources.flash_error, ToastLength.Long).Show();
             }
         }
 
