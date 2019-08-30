@@ -106,6 +106,33 @@ namespace Recognizer.Core.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Вспышка.
+        /// </summary>
+        public static string flash {
+            get {
+                return ResourceManager.GetString("flash", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ошибка со вспышкой.
+        /// </summary>
+        public static string flash_error {
+            get {
+                return ResourceManager.GetString("flash_error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Нужна вспышка.
+        /// </summary>
+        public static string flash_request_permission {
+            get {
+                return ResourceManager.GetString("flash_request_permission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Нужен интернет.
         /// </summary>
         public static string internet_request_permission {

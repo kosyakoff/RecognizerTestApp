@@ -33,8 +33,8 @@ namespace RecognizerTestApp
     public class MainActivity : AppCompatActivity, TextureView.ISurfaceTextureListener
     {
         private const int REQUEST_CAMERA_ID = 1001;
-        private const int REQUEST_WRITE_ID = 1002;
-        private const int REQUEST_INTERNET_ID = 1003;
+        private const int REQUEST_INTERNET_ID = 1002;
+        private const int REQUEST_FLASH_ID = 1003;
 
         private static readonly string TAG = "Recognizer";
         // Max preview width that is guaranteed by Camera2 API
@@ -59,6 +59,7 @@ namespace RecognizerTestApp
         private SurfaceTexture _surface;
         private Size _realSurfaceSize = new Size(0,0);
         private TextView _serviceText;
+        private Button _flashButton;
 
         public void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
         {
@@ -305,6 +306,7 @@ namespace RecognizerTestApp
                 _imageView.Visibility = ViewStates.Visible;
             }
 
+            _flashButton = FindViewById<Button>(Resource.Id.flash_button);  
             _serviceText = FindViewById<TextView>(Resource.Id.service_text);
             _textView = FindViewById<TextView>(Resource.Id.text_view);
             _rerunButton = FindViewById<Button>(Resource.Id.rerun_button);
@@ -316,6 +318,10 @@ namespace RecognizerTestApp
                 _textView.Text = string.Empty;
             };
 
+            _flashButton.Text = CommonResources.flash;
+
+            _flashButton.Click += (obj, e) => { ToggleFlash(); };
+
             _toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(_toolbar);
             SupportActionBar.Title = CommonResources.on_client;
@@ -326,6 +332,40 @@ namespace RecognizerTestApp
 
             _textureView.SurfaceTextureListener = this;
 
+        }
+
+        private bool _flashOn;
+
+        private void ToggleFlash()
+        {
+            _flashOn = !_flashOn;
+
+            if (_flashOn)
+            {
+                var param = _camera.GetParameters();
+                param.FlashMode = Camera.Parameters.FlashModeTorch;
+                try
+                {
+                    _camera.SetParameters(param);
+                }
+                catch (Exception e)
+                {
+                    Toast.MakeText(this, CommonResources.flash_error, ToastLength.Long).Show();
+                }
+            }
+            else
+            {
+                var param = _camera.GetParameters();
+                param.FlashMode = Camera.Parameters.FlashModeOff;
+                try
+                {
+                    _camera.SetParameters(param);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine();
+                }
+            }
         }
 
         private void TaskSchedulerOnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
@@ -348,21 +388,21 @@ namespace RecognizerTestApp
                 return;
             }
 
-            if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.WriteExternalStorage) !=
-                Permission.Granted)
-            {
-                _rightCheckInProgress = true;
-                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.WriteExternalStorage },
-                    REQUEST_WRITE_ID);
-                return;
-            }
-
             if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.Internet) !=
                 Permission.Granted)
             {
                 _rightCheckInProgress = true;
                 ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.Internet },
                     REQUEST_INTERNET_ID);
+                return;
+            }
+
+            if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.Flashlight) !=
+                Permission.Granted)
+            {
+                _rightCheckInProgress = true;
+                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.Flashlight },
+                    REQUEST_FLASH_ID);
                 return;
             }
 
@@ -383,19 +423,19 @@ namespace RecognizerTestApp
                     }
                     break;
 
-                case REQUEST_WRITE_ID:
+                case REQUEST_INTERNET_ID:
                     if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
                     {
-                        ErrorDialog.NewInstance(CommonResources.write_request_permission)
+                        ErrorDialog.NewInstance(CommonResources.internet_request_permission)
                             .Show(this.FragmentManager, "dialog");
                         this.FinishAffinity();
                     }
                     break;
 
-                case REQUEST_INTERNET_ID:
+                case REQUEST_FLASH_ID:
                     if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
                     {
-                        ErrorDialog.NewInstance(CommonResources.internet_request_permission)
+                        ErrorDialog.NewInstance(CommonResources.flash_request_permission)
                             .Show(this.FragmentManager, "dialog");
                         this.FinishAffinity();
                     }

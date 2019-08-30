@@ -132,6 +132,15 @@
   <data name="common_quality" xml:space="preserve">
     <value>Качество</value>
   </data>
+  <data name="flash" xml:space="preserve">
+    <value>Вспышка</value>
+  </data>
+  <data name="flash_error" xml:space="preserve">
+    <value>Ошибка со вспышкой</value>
+  </data>
+  <data name="flash_request_permission" xml:space="preserve">
+    <value>Нужна вспышка</value>
+  </data>
   <data name="internet_request_permission" xml:space="preserve">
     <value>Нужен интернет</value>
   </data>
