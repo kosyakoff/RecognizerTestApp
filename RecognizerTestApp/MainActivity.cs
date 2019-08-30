@@ -42,9 +42,6 @@ namespace RecognizerTestApp
         // Max preview height that is guaranteed by Camera2 API
         private static readonly int MAX_PREVIEW_HEIGHT = 1080;
 
-        private const int _colorBasedSearchBitmapHeight = 900;
-        private double _searchBoxDelimeter = 1;
-
         private Camera _camera;
 
         private OverlayView _overlayView;
@@ -141,14 +138,11 @@ namespace RecognizerTestApp
                         GravityFlags.CenterVertical | GravityFlags.CenterHorizontal);
             });
 
-            if (GeneralSettings.UseSearchBoxDelimeter)
-            {
-                _searchBoxDelimeter = (double)_realSurfaceSize.Height / _colorBasedSearchBitmapHeight;
-            }
+
 
 
             await _recognizerService.Init(ApplicationContext,
-                new Size((int)(_realSurfaceSize.Height / _searchBoxDelimeter), (int)(_realSurfaceSize.Width / _searchBoxDelimeter)));
+                new Size(_realSurfaceSize.Height, _realSurfaceSize.Width));
 
             _recognizerService.OverlayRectUpdated += RecognizerServiceOverlayRectUpdated;
             _recognizerService.CroppedImageUpdated += RecognizerServiceCroppedImageUpdated;
@@ -242,8 +236,8 @@ namespace RecognizerTestApp
             try
             {
                 var updatedBitmap = _textureView.
-                    GetBitmap((int)(_textureView.Bitmap.Width /_searchBoxDelimeter), 
-                        (int)(_textureView.Bitmap.Height / _searchBoxDelimeter));
+                    GetBitmap(_textureView.Bitmap.Width,
+                        _textureView.Bitmap.Height);
 
                 var result = await _recognizerService.RecognizeText(updatedBitmap);
 
@@ -321,6 +315,26 @@ namespace RecognizerTestApp
             _serviceText = FindViewById<TextView>(Resource.Id.service_text);
             _textView = FindViewById<TextView>(Resource.Id.text_view);
             _rerunButton = FindViewById<Button>(Resource.Id.rerun_button);
+            _delimButton = FindViewById<Button>(Resource.Id.delim_button);
+
+            if (GeneralSettings.UseSearchBoxDelimeter)
+            {
+                _delimButton.Visibility = ViewStates.Visible;
+                _delimButton.Text = _recognizerService.SearchBoxDelimiter.ToString();
+            }
+
+            _delimButton.Click += (obj, e) =>
+            {
+                _recognizerService.SearchBoxDelimiter++;
+                if (_recognizerService.SearchBoxDelimiter > 4)
+                {
+                    _recognizerService.SearchBoxDelimiter = 1;
+                }
+
+                _delimButton.Text = _recognizerService.SearchBoxDelimiter.ToString();
+                Toast.MakeText(this, $"delim={_recognizerService.SearchBoxDelimiter}", ToastLength.Long).Show();
+            };
+
             _rerunButton.Text = CommonResources.rerun;
             _rerunButton.Click += (obj, e) =>
             {
@@ -346,6 +360,7 @@ namespace RecognizerTestApp
         }
 
         private bool _flashOn;
+        private Button _delimButton;
 
         private void ToggleFlash()
         {
@@ -445,28 +460,7 @@ namespace RecognizerTestApp
 
         private void RecognizerServiceOverlayRectUpdated(object sender, Rect rect)
         {
-            if (rect.IsEmpty)
-            {
-                _overlayView.Rect = rect;
-                return;
-            }
-
-            int horLength = (int)(Math.Abs(rect.CenterX() - rect.Left) * _searchBoxDelimeter);
-            int verLength = (int)(Math.Abs(rect.CenterY() - rect.Top) * _searchBoxDelimeter);
-
-            Rect resizedRect = new Rect((int)(rect.Left * _searchBoxDelimeter), 
-                (int)(rect.Top * _searchBoxDelimeter),
-                (int)(rect.Right * _searchBoxDelimeter),
-                (int)(rect.Bottom * _searchBoxDelimeter));
-
-            _overlayView.Rect = resizedRect;
-
-            //int horLength = (int)(Math.Abs(rect.CenterX() - rect.Left) * _searchBoxDelimeter);
-            //int verLength = (int)(Math.Abs(rect.CenterY() - rect.Top) * _searchBoxDelimeter);
-
-            //Rect resizedRect = new Rect(rect.CenterX() - horLength, rect.CenterY() - verLength, rect.CenterX() + horLength, rect.CenterY() + verLength);
-
-            //_overlayView.Rect = resizedRect;
+            _overlayView.Rect = rect;
         }
     }
 }

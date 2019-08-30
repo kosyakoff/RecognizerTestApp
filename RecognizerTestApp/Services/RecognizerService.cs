@@ -33,6 +33,9 @@ namespace RecognizerTestApp.Services
         private int _currentBufferHorSize = PRIMARY_CROP_BUFFER_HOR;
         private int _currentBufferVerSize = PRIMARY_CROP_BUFFER_VER;
 
+        private int _searchBoxDelimiter = 1;
+
+
         // public float CurrentContrast = 1;
 
         private readonly Rect _bBox = new Rect();
@@ -82,6 +85,13 @@ namespace RecognizerTestApp.Services
 
         private bool _referenceColorIsSet;
 
+        public int SearchBoxDelimiter
+        {
+            get { return _searchBoxDelimiter; }
+            set { _searchBoxDelimiter = value; }
+        }
+
+
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
             _bBox.Set(int.MaxValue, int.MaxValue, int.MinValue, int.MinValue);
@@ -89,9 +99,9 @@ namespace RecognizerTestApp.Services
 
             try
             {
-                for (var j = 0; j < updateBitmapHeight; j++)
+                for (var j = 0; j < updateBitmapHeight; j = j + SearchBoxDelimiter)
                 {
-                    for (var i = 0; i < updateBitmapWidth; i++)
+                    for (var i = 0; i < updateBitmapWidth; i = i +SearchBoxDelimiter)
                     {
                         var pixelColor = _bitmapPixelArray[j * updateBitmapWidth + i];
                         var red = Color.GetRedComponent(pixelColor);
@@ -207,6 +217,8 @@ namespace RecognizerTestApp.Services
 
         public async Task Init(Context appContext, Size size)
         {
+
+
             _appContext = appContext ?? throw new ArgumentNullException(nameof(appContext));
             _textureSize = size ?? throw new ArgumentNullException(nameof(size));
 
