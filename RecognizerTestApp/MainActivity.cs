@@ -36,7 +36,6 @@ namespace RecognizerTestApp
         private const int REQUEST_WRITE_ID = 1002;
         private const int REQUEST_INTERNET_ID = 1003;
 
-
         private static readonly string TAG = "Recognizer";
         // Max preview width that is guaranteed by Camera2 API
         private static readonly int MAX_PREVIEW_WIDTH = 1920;
@@ -215,6 +214,12 @@ namespace RecognizerTestApp
 
         public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
         {
+            if (_recognizerService.GetRecognizingActor() == RecognizingActor.Server &&
+                !_recognizerService.CanBeRecognizedFromServer())
+            {
+                return;
+            }
+
             if (_recognizerService.IsInitialized && !_recognizerService.SearchComplete && !_recognizerService.RecognizingTextInProgress)
             {
                 _recognizerService.RecognizingTextInProgress = true;
@@ -257,8 +262,16 @@ namespace RecognizerTestApp
                     break;
                 case Resource.Id.menu_server:
                     SupportActionBar.Title = CommonResources.on_server;
-                    Toast.MakeText(this, CommonResources.on_server, ToastLength.Short).Show();
                     _recognizerService.SetRecognizingActor(RecognizingActor.Server);
+
+                    if (_recognizerService.CanBeRecognizedFromServer())
+                    {
+                        Toast.MakeText(this, CommonResources.on_server, ToastLength.Short).Show();
+                    }
+                    else
+                    {
+                        Toast.MakeText(this, CommonResources.cant_be_recognized_from_server, ToastLength.Long).Show();
+                    }
                     break;
             }
 
@@ -360,6 +373,7 @@ namespace RecognizerTestApp
                     {
                         ErrorDialog.NewInstance(CommonResources.camera_request_permission)
                             .Show(this.FragmentManager, "dialog");
+                        this.FinishAffinity();
                     }
                     break;
 
@@ -368,6 +382,7 @@ namespace RecognizerTestApp
                     {
                         ErrorDialog.NewInstance(CommonResources.write_request_permission)
                             .Show(this.FragmentManager, "dialog");
+                        this.FinishAffinity();
                     }
                     break;
 
@@ -376,6 +391,7 @@ namespace RecognizerTestApp
                     {
                         ErrorDialog.NewInstance(CommonResources.internet_request_permission)
                             .Show(this.FragmentManager, "dialog");
+                        this.FinishAffinity();
                     }
                     break;
             }

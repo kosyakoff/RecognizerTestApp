@@ -153,17 +153,26 @@ namespace RecognizerTestApp.Services
 
         private void InitFirebase()
         {
-            _defaultFirebaseApp = FirebaseApp.InitializeApp(_appContext);
+            try
+            {
+                _defaultFirebaseApp = FirebaseApp.InitializeApp(_appContext);
 
-            _firebaseProcessImageListener = new ProcessImageListener();
+                _firebaseProcessImageListener = new ProcessImageListener();
 
-            var options = new FirebaseVisionCloudTextRecognizerOptions.Builder()
-                .SetLanguageHints(new List<string> { "ru" })
-                .SetModelType(FirebaseVisionCloudTextRecognizerOptions.DenseModel)
-                .Build();
+                var options = new FirebaseVisionCloudTextRecognizerOptions.Builder()
+                    .SetLanguageHints(new List<string> { "ru" })
+                    .SetModelType(FirebaseVisionCloudTextRecognizerOptions.DenseModel)
+                    .Build();
 
-            _firebaseVisionTextDetector =
-                FirebaseVision.GetInstance(_defaultFirebaseApp).GetCloudTextRecognizer(options);
+                var firebaseVision = FirebaseVision.GetInstance(_defaultFirebaseApp);
+
+                _firebaseVisionTextDetector =
+                    firebaseVision.GetCloudTextRecognizer(options);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         public async Task Init(Context appContext, Size size)
@@ -173,7 +182,7 @@ namespace RecognizerTestApp.Services
 
             _bitmapPixelArray = new int[_textureSize.Width * _textureSize.Height];
 
-           // InitFirebase();
+            InitFirebase();
             await InitTesseract();
 
             IsInitialized = true;
@@ -430,6 +439,16 @@ namespace RecognizerTestApp.Services
         public void SetRecognizingActor(RecognizingActor actor)
         {
             _recognizingActor = actor;
+        }
+
+        public RecognizingActor GetRecognizingActor()
+        {
+            return _recognizingActor;
+        }
+
+        public bool CanBeRecognizedFromServer()
+        {
+            return _firebaseVisionTextDetector != null;
         }
     }
 }

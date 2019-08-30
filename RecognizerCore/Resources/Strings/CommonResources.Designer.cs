@@ -70,11 +70,29 @@ namespace Recognizer.Core.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Нужны телефонные логи.
+        /// </summary>
+        public static string call_logs_request_permission {
+            get {
+                return ResourceManager.GetString("call_logs_request_permission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Нужна камера.
         /// </summary>
         public static string camera_request_permission {
             get {
                 return ResourceManager.GetString("camera_request_permission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Распознование при помощи сервера недоступно.
+        /// </summary>
+        public static string cant_be_recognized_from_server {
+            get {
+                return ResourceManager.GetString("cant_be_recognized_from_server", resourceCulture);
             }
         }
         
@@ -93,6 +111,15 @@ namespace Recognizer.Core.Resources.Strings {
         public static string internet_request_permission {
             get {
                 return ResourceManager.GetString("internet_request_permission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Нужны логи.
+        /// </summary>
+        public static string logs_request_permission {
+            get {
+                return ResourceManager.GetString("logs_request_permission", resourceCulture);
             }
         }
         

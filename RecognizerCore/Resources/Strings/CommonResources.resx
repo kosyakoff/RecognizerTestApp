@@ -120,14 +120,23 @@
   <data name="app_name" xml:space="preserve">
     <value>Recognizer</value>
   </data>
+  <data name="call_logs_request_permission" xml:space="preserve">
+    <value>Нужны телефонные логи</value>
+  </data>
   <data name="camera_request_permission" xml:space="preserve">
     <value>Нужна камера</value>
+  </data>
+  <data name="cant_be_recognized_from_server" xml:space="preserve">
+    <value>Распознование при помощи сервера недоступно</value>
   </data>
   <data name="common_quality" xml:space="preserve">
     <value>Качество</value>
   </data>
   <data name="internet_request_permission" xml:space="preserve">
     <value>Нужен интернет</value>
+  </data>
+  <data name="logs_request_permission" xml:space="preserve">
+    <value>Нужны логи</value>
   </data>
   <data name="no_camera" xml:space="preserve">
     <value>Камера отсутсвует</value>
