@@ -49,17 +49,24 @@ namespace RecognizerTestApp
 
         protected override void OnDraw(Canvas canvas)
         {
-            base.OnDraw(canvas);
-
-           // Canvas canvas = _textureView.LockCanvas();
-            if (canvas != null && Rect != null &&
-                !Rect.IsEmpty)
+            try
             {
-                _paint.StrokeWidth = _strokeWidth;
+                base.OnDraw(canvas);
 
-                canvas.DrawRect(Rect.Left - _strokeWidth, Rect.Top - _strokeWidth, Rect.Right + _strokeWidth, Rect.Bottom + _strokeWidth, _paint);
+                // Canvas canvas = _textureView.LockCanvas();
+                if (canvas != null && Rect != null &&
+                    !Rect.IsEmpty)
+                {
+                    _paint.StrokeWidth = _strokeWidth;
 
-                //_textureView.UnlockCanvasAndPost(canvas);
+                    canvas.DrawRect(Rect.Left - _strokeWidth, Rect.Top - _strokeWidth, Rect.Right + _strokeWidth, Rect.Bottom + _strokeWidth, _paint);
+
+                    //_textureView.UnlockCanvasAndPost(canvas);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
 
         }

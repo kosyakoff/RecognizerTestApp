@@ -25,6 +25,8 @@ namespace RecognizerTestApp.Services
         private const int SMALLER_ACCURACY = 10;
         private const int MAX_TEXT_LENGTH = 160;
 
+        private const int MIN_TEXT_LENGTH = 50;
+
         private const int PRIMARY_CROP_BUFFER_VER = 10;
         private const int PRIMARY_CROP_BUFFER_HOR = 15;
 
@@ -76,12 +78,16 @@ namespace RecognizerTestApp.Services
         public event EventHandler<Rect> OverlayRectUpdated;
         public event EventHandler<Bitmap> CroppedImageUpdated;
         public event EventHandler<string> RecordWasFound;
+        public event EventHandler SomeIncorrectTextWasFound;
+        public event EventHandler NoTextWasFound;
 
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
             _bBox.Set(int.MaxValue, int.MaxValue, int.MinValue, int.MinValue);
 
-            for (var j = 0; j < updateBitmapHeight; j++)
+            try
+            {
+                for (var j = 0; j < updateBitmapHeight; j++)
                 for (var i = 0; i < updateBitmapWidth; i++)
                 {
                     var pixelColor = _bitmapPixelArray[j * updateBitmapWidth + i];
@@ -109,6 +115,11 @@ namespace RecognizerTestApp.Services
                         UpdateBoundingBox(i, j);
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private void UpdateBoundingBox(int x, int y)
@@ -235,7 +246,18 @@ namespace RecognizerTestApp.Services
                 if (_finalRecognitionResult.Quality >= UPPER_RECOGNITION_VALUE)
                 {
                     SearchComplete = true;
-                    RecordWasFound?.Invoke(this,_finalRecognitionResult.OriginalText);
+                    RecordWasFound?.Invoke(this, _finalRecognitionResult.OriginalText);
+                }
+                else
+                {
+                    if (_finalRecognitionResult.ResultText.Length >= MIN_TEXT_LENGTH)
+                    {
+                        SomeIncorrectTextWasFound?.Invoke(this, EventArgs.Empty);
+                    }
+                    else
+                    {
+                        NoTextWasFound?.Invoke(this,EventArgs.Empty);
+                    }
                 }
 
                 RecognizingTextInProgress = false;
@@ -258,55 +280,62 @@ namespace RecognizerTestApp.Services
 
         private async Task PerformRecognizing(Bitmap updatedBitmap)
         {
-            GetCroppingBoundingBox(_textureSize.Height, _textureSize.Width);
+            try
+            {
+                GetCroppingBoundingBox(_textureSize.Height, _textureSize.Width);
 
-            if (!_bBox.IsEmpty)
-            {
-                await PerformRecognizingInternal(updatedBitmap);
+                if (!_bBox.IsEmpty)
+                {
+                    await PerformRecognizingInternal(updatedBitmap);
+                }
+                else
+                {
+                    _tempRecognitionResult.Invalidate();
+                }
             }
-            else
+            catch (Exception e)
             {
-                _tempRecognitionResult.Invalidate();
+                Console.WriteLine(e);
             }
         }
 
         private async Task PerformRecognizingInternal(Bitmap updatedBitmap)
         {
-            ModifyCroppingBuffer(_currentBufferHorSize, _currentBufferVerSize);
-
-            Bitmap croppedBitmap;
-            using (var matrix = new Matrix())
-            {
-                matrix.PostRotate(90);
-
-                croppedBitmap =
-                    Bitmap.CreateBitmap(updatedBitmap,
-                        _bBox.Left,
-                        _bBox.Top,
-                        _bBox.Width(),
-                        _bBox.Height(),
-                        matrix,
-                        false);
-
-                croppedBitmap = BitmapOperator.DrawDitheringBorder(croppedBitmap, _currentBufferVerSize);
-                //croppedBitmap = BitmapOperator.TurnToGrayScale(croppedBitmap);
-                //croppedBitmap = BitmapOperator.ChangeBitmapContrastBrightness(croppedBitmap, CurrentContrast, 0);
-            }
-
-            switch (_recognizingActor)
-            {
-                case RecognizingActor.Client:
-                    await TesseractTextRecognizing(croppedBitmap);
-                    break;
-                case RecognizingActor.Server:
-                    await FirebaseTextRecognizing(croppedBitmap);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
             try
             {
+                ModifyCroppingBuffer(_currentBufferHorSize, _currentBufferVerSize);
+
+                Bitmap croppedBitmap;
+                using (var matrix = new Matrix())
+                {
+                    matrix.PostRotate(90);
+
+                    croppedBitmap =
+                        Bitmap.CreateBitmap(updatedBitmap,
+                            _bBox.Left,
+                            _bBox.Top,
+                            _bBox.Width(),
+                            _bBox.Height(),
+                            matrix,
+                            false);
+
+                    croppedBitmap = BitmapOperator.DrawDitheringBorder(croppedBitmap, _currentBufferVerSize);
+                    //croppedBitmap = BitmapOperator.TurnToGrayScale(croppedBitmap);
+                    //croppedBitmap = BitmapOperator.ChangeBitmapContrastBrightness(croppedBitmap, CurrentContrast, 0);
+                }
+
+                switch (_recognizingActor)
+                {
+                    case RecognizingActor.Client:
+                        await TesseractTextRecognizing(croppedBitmap);
+                        break;
+                    case RecognizingActor.Server:
+                        await FirebaseTextRecognizing(croppedBitmap);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
                 if (GeneralSettings.ShowCroppedImage)
                 {
                     CroppedImageUpdated?.Invoke(this, croppedBitmap);
@@ -315,10 +344,6 @@ namespace RecognizerTestApp.Services
                 {
                     croppedBitmap.Dispose();
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
             }
         }
 
@@ -357,31 +382,45 @@ namespace RecognizerTestApp.Services
 
         private async Task TesseractTextRecognizing(Bitmap croppedBitmap)
         {
-            if (_tesseractApi != null && _tesseractApi.Initialized)
+            try
             {
-                var success = await _tesseractApi.Recognise(croppedBitmap);
-                var text = success ? _tesseractApi.Text : string.Empty;
+                if (_tesseractApi != null && _tesseractApi.Initialized)
+                {
+                    var success = await _tesseractApi.Recognise(croppedBitmap);
+                    var text = success ? _tesseractApi.Text : string.Empty;
 
-                SetRecognitionResultFromText(text.Length < MAX_TEXT_LENGTH ? text : string.Empty);
+                    SetRecognitionResultFromText(text.Length < MAX_TEXT_LENGTH ? text : string.Empty);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
         private void SetRecognitionResultFromText(string originalText)
         {
-            double quality = 0;
-
-            var text = originalText.Replace("\n", "").Replace(" ", "").ToLower();
-
-            if (text.Length > 0)
+            try
             {
-                double diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
-                quality = (_referenceString.Length - diff) / _referenceString.Length * 100;
-            }
+                double quality = 0;
 
-            _tempRecognitionResult.OriginalText = originalText;
-            _tempRecognitionResult.ResultText = text;
-            _tempRecognitionResult.Quality = quality;
-            _tempRecognitionResult.BoundingBox = new Rect(_bBox);
+                var text = originalText.Replace("\n", "").Replace(" ", "").ToLower();
+
+                if (text.Length > 0)
+                {
+                    double diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
+                    quality = (_referenceString.Length - diff) / _referenceString.Length * 100;
+                }
+
+                _tempRecognitionResult.OriginalText = originalText;
+                _tempRecognitionResult.ResultText = text;
+                _tempRecognitionResult.Quality = quality;
+                _tempRecognitionResult.BoundingBox = new Rect(_bBox);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         public void SetRecognizingActor(RecognizingActor actor)

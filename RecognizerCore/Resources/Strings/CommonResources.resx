@@ -138,8 +138,14 @@
   <data name="on_server" xml:space="preserve">
     <value>На сервере</value>
   </data>
+  <data name="place_cursor_on_text" xml:space="preserve">
+    <value>Наведите камеру на AU код</value>
+  </data>
   <data name="rerun" xml:space="preserve">
     <value>Перезапустить</value>
+  </data>
+  <data name="some_wrong_text_found" xml:space="preserve">
+    <value>Найден текст,которого нет в базе</value>
   </data>
   <data name="write_request_permission" xml:space="preserve">
     <value>Нужна запись</value>

@@ -124,11 +124,29 @@ namespace Recognizer.Core.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Наведите камеру на AU код.
+        /// </summary>
+        public static string place_cursor_on_text {
+            get {
+                return ResourceManager.GetString("place_cursor_on_text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Перезапустить.
         /// </summary>
         public static string rerun {
             get {
                 return ResourceManager.GetString("rerun", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Найден текст,которого нет в базе.
+        /// </summary>
+        public static string some_wrong_text_found {
+            get {
+                return ResourceManager.GetString("some_wrong_text_found", resourceCulture);
             }
         }
         

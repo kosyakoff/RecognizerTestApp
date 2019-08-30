@@ -59,6 +59,7 @@ namespace RecognizerTestApp
         private Button _rerunButton;
         private SurfaceTexture _surface;
         private Size _realSurfaceSize = new Size(0,0);
+        private TextView _serviceText;
 
         public void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
         {
@@ -143,17 +144,55 @@ namespace RecognizerTestApp
             _recognizerService.OverlayRectUpdated += RecognizerServiceOverlayRectUpdated;
             _recognizerService.CroppedImageUpdated += RecognizerServiceCroppedImageUpdated;
             _recognizerService.RecordWasFound += RecognizerServiceRecordWasFound;
+            _recognizerService.SomeIncorrectTextWasFound += RecognizerServiceSomeIncorrectTextWasFound;
+            _recognizerService.NoTextWasFound += RecognizerServiceNoTextWasFound; 
+        }
+
+        private void RecognizerServiceNoTextWasFound(object sender, EventArgs e)
+        {
+            try
+            {
+                RunOnUiThread(() => { _serviceText.Text = CommonResources.place_cursor_on_text; });
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+            }
+        }
+
+        private void RecognizerServiceSomeIncorrectTextWasFound(object sender, EventArgs e)
+        {
+            try
+            {
+                RunOnUiThread(() =>
+                {
+                    Toast.MakeText(this, CommonResources.some_wrong_text_found, ToastLength.Short).Show();
+                    _serviceText.Text = string.Empty;
+                });
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+            }
         }
 
         private void RecognizerServiceRecordWasFound(object sender, string result)
         {
-            RunOnUiThread(() =>
+            try
             {
-                _rerunButton.Visibility = ViewStates.Visible;
-                _overlayView.Rect = new Rect();
-                _overlayView.ForceLayout();
-                _textView.Text = result;
-            });
+                RunOnUiThread(() =>
+                {
+                    _rerunButton.Visibility = ViewStates.Visible;
+                    _overlayView.Rect = new Rect();
+                    _overlayView.ForceLayout();
+                    _textView.Text = result;
+                    _serviceText.Text = string.Empty;
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private void RecognizerServiceCroppedImageUpdated(object sender, Bitmap bitmap)
@@ -247,6 +286,7 @@ namespace RecognizerTestApp
                 _imageView.Visibility = ViewStates.Visible;
             }
 
+            _serviceText = FindViewById<TextView>(Resource.Id.service_text);
             _textView = FindViewById<TextView>(Resource.Id.text_view);
             _rerunButton = FindViewById<Button>(Resource.Id.rerun_button);
             _rerunButton.Text = CommonResources.rerun;
