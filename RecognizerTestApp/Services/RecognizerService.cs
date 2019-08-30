@@ -345,6 +345,10 @@ namespace RecognizerTestApp.Services
                     croppedBitmap.Dispose();
                 }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private void ModifyCroppingBuffer(int horVal, int verVal)
