@@ -39,8 +39,6 @@ namespace RecognizerTestApp.Services
 
         private readonly RecognitionResult _finalRecognitionResult = new RecognitionResult();
 
-        private readonly Color _referenceColor = new Color(65, 113, 127);
-
         private readonly string _referenceString =
             "рного тел ется, что и помощи  й можно п т в четыр ли овладе".Replace(" ", "").ToLower();
 
@@ -65,11 +63,12 @@ namespace RecognizerTestApp.Services
 
         public volatile bool IsInitialized;
 
-        private List<Color> _referenceColors = new List<Color>
+        private Color _selectedReferenceColor = new Color(65, 113, 127);
+
+        private readonly List<Color> _allReferenceColors = new List<Color>
         {
             new Color(65, 113, 127),
-            new Color(83, 116, 125),
-            new Color(59, 96, 105)
+            new Color(158, 74, 74),
         };
 
         private TesseractApi _tesseractApi;
@@ -81,44 +80,75 @@ namespace RecognizerTestApp.Services
         public event EventHandler SomeIncorrectTextWasFound;
         public event EventHandler NoTextWasFound;
 
+        private bool _referenceColorIsSet;
+
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
             _bBox.Set(int.MaxValue, int.MaxValue, int.MinValue, int.MinValue);
+            _referenceColorIsSet = false;
 
             try
             {
                 for (var j = 0; j < updateBitmapHeight; j++)
-                for (var i = 0; i < updateBitmapWidth; i++)
                 {
-                    var pixelColor = _bitmapPixelArray[j * updateBitmapWidth + i];
-                    var red = Color.GetRedComponent(pixelColor);
-
-                    // applicableColors.AddRange(_referenceColors.Where(x => Math.Abs(x.R - red) < _currentAccuracy));
-
-                    var green = Color.GetGreenComponent(pixelColor);
-
-                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.G - green) >= _currentAccuracy)).ToList();
-
-                    var blue = Color.GetBlueComponent(pixelColor);
-
-                    //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.B - blue) >= _currentAccuracy)).ToList();
-
-
-                    var dbl_test_red = Math.Pow((double)_referenceColor.R - red, 2.0);
-                    var dbl_test_green = Math.Pow((double)_referenceColor.G - green, 2.0);
-                    var dbl_test_blue = Math.Pow((double)_referenceColor.B - blue, 2.0);
-
-                    var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
-
-                    if (distance < _currentAccuracy)
+                    for (var i = 0; i < updateBitmapWidth; i++)
                     {
-                        UpdateBoundingBox(i, j);
+                        var pixelColor = _bitmapPixelArray[j * updateBitmapWidth + i];
+                        var red = Color.GetRedComponent(pixelColor);
+
+                        // applicableColors.AddRange(_allReferenceColors.Where(x => Math.Abs(x.R - red) < _currentAccuracy));
+
+                        var green = Color.GetGreenComponent(pixelColor);
+
+                        //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.G - green) >= _currentAccuracy)).ToList();
+
+                        var blue = Color.GetBlueComponent(pixelColor);
+
+                        //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.B - blue) >= _currentAccuracy)).ToList();
+
+                        if (_referenceColorIsSet)
+                        {
+                            CheckReferenceColorBbox(j, i, red, green, blue);
+                        }
+                        else
+                        {
+                            foreach (var referenceColor in _allReferenceColors)
+                            {
+                                var dbl_test_red = Math.Pow((double)referenceColor.R - red, 2.0);
+                                var dbl_test_green = Math.Pow((double)referenceColor.G - green, 2.0);
+                                var dbl_test_blue = Math.Pow((double)referenceColor.B - blue, 2.0);
+
+                                var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
+
+                                if (distance < _currentAccuracy)
+                                {
+                                    _selectedReferenceColor = referenceColor;
+                                    _referenceColorIsSet = true;
+
+                                    CheckReferenceColorBbox(j, i, red, green, blue);
+                                }
+                            }
+                        }
                     }
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
+            }
+        }
+
+        private void CheckReferenceColorBbox(int j, int i, int red, int green, int blue)
+        {
+            var dbl_test_red = Math.Pow((double)_selectedReferenceColor.R - red, 2.0);
+            var dbl_test_green = Math.Pow((double)_selectedReferenceColor.G - green, 2.0);
+            var dbl_test_blue = Math.Pow((double)_selectedReferenceColor.B - blue, 2.0);
+
+            var distance = Math.Sqrt(dbl_test_blue + dbl_test_green + dbl_test_red);
+
+            if (distance < _currentAccuracy)
+            {
+                UpdateBoundingBox(i, j);
             }
         }
 
@@ -240,12 +270,7 @@ namespace RecognizerTestApp.Services
                     }
                 }
 
-                //var overlayRect = new Rect(
-                //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Bottom,
-                //    _finalRecognitionResult.BoundingBox.Left,
-                //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Top,
-                //    _bBox.Right);
-                OverlayRectUpdated?.Invoke(this, _finalRecognitionResult.BoundingBox);
+                OverlayRectUpdated?.Invoke(this, _tempRecognitionResult.BoundingBox);
 
                 textureViewBitmap.Dispose();
 
@@ -300,6 +325,7 @@ namespace RecognizerTestApp.Services
                 else
                 {
                     _tempRecognitionResult.Invalidate();
+                    NoTextWasFound?.Invoke(this, EventArgs.Empty);
                 }
             }
             catch (Exception e)

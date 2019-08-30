@@ -347,8 +347,6 @@ namespace RecognizerTestApp
             param.FlashMode = _flashOn ? Camera.Parameters.FlashModeTorch : Camera.Parameters.FlashModeOff;
             _camera.SetParameters(param);
 
-   
-
             }
             catch (Exception e)
             {
