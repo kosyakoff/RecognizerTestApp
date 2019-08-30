@@ -247,6 +247,12 @@ namespace RecognizerTestApp
         public override bool OnCreateOptionsMenu(IMenu menu)
         {
             MenuInflater.Inflate(Resource.Menu.toolbar_menu, menu);
+
+            var onClientItem = menu.FindItem(Resource.Id.menu_client);
+            onClientItem.SetTitle(CommonResources.on_client);
+            var onServerItem = menu.FindItem(Resource.Id.menu_server);
+            onServerItem.SetTitle(CommonResources.on_server);
+
             return base.OnCreateOptionsMenu(menu);
         }
 
