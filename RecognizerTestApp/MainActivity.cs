@@ -23,6 +23,7 @@ using RecognizerTestApp.Helpers;
 using RecognizerTestApp.Services;
 using RecognizerTestApp.Settings;
 using Camera = Android.Hardware.Camera;
+using Exception = System.Exception;
 using Math = System.Math;
 using Toolbar = Android.Support.V7.Widget.Toolbar;
 
@@ -72,189 +73,6 @@ namespace RecognizerTestApp
             CheckRights();
         }
 
-        private static Size ChooseOptimalSize(Size[] choices, int textureViewWidth,
-            int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio)
-        {
-            // Collect the supported resolutions that are at least as big as the preview Surface
-            var bigEnough = new List<Size>();
-            // Collect the supported resolutions that are smaller than the preview Surface
-            var notBigEnough = new List<Size>();
-            int w = aspectRatio.Width;
-            int h = aspectRatio.Height;
-
-            for (var i = 0; i < choices.Length; i++)
-            {
-                Size option = choices[i];
-                if ((option.Width <= maxWidth) && (option.Height <= maxHeight) &&
-                    option.Height == option.Width * h / w)
-                {
-                    if (option.Width >= textureViewWidth &&
-                        option.Height >= textureViewHeight)
-                    {
-                        bigEnough.Add(option);
-                    }
-                    else
-                    {
-                        notBigEnough.Add(option);
-                    }
-                }
-            }
-
-            // Pick the smallest of those big enough. If there is no one big enough, pick the
-            // largest of those not big enough.
-            if (bigEnough.Count > 0)
-            {
-                return (Size)Collections.Min(bigEnough, new CompareSizesByArea());
-            }
-            else if (notBigEnough.Count > 0)
-            {
-                return (Size)Collections.Max(notBigEnough, new CompareSizesByArea());
-            }
-            else
-            {
-                Log.Error("Rec", "Couldn't find any suitable preview size");
-                return choices[0];
-            }
-        }
-
-        private void SetUpCameraOutputs(int width, int height)
-        {
-            var activity = this;
-            var manager = (CameraManager)activity.GetSystemService(Context.CameraService);
-            try
-            {
-                for (var i = 0; i < manager.GetCameraIdList().Length; i++)
-                {
-                    var cameraId = manager.GetCameraIdList()[i];
-                    CameraCharacteristics characteristics = manager.GetCameraCharacteristics(cameraId);
-
-                    // We don't use a front facing camera in this sample.
-                    var facing = (Integer)characteristics.Get(CameraCharacteristics.LensFacing);
-                    if (facing != null && facing == (Integer.ValueOf((int)LensFacing.Front)))
-                    {
-                        continue;
-                    }
-
-                    var map = (StreamConfigurationMap)characteristics.Get(CameraCharacteristics.ScalerStreamConfigurationMap);
-                    if (map == null)
-                    {
-                        continue;
-                    }
-
-                    // For still image captures, we use the largest available size.
-                    //Size largest = (Size)Collections.Max(Arrays.AsList(map.GetOutputSizes((int)ImageFormatType.Jpeg)),
-                    //    new CompareSizesByArea());
-
-                    // Find out if we need to swap dimension to get the preview size relative to sensor
-                    // coordinate.
-                    var displayRotation = activity.WindowManager.DefaultDisplay.Rotation;
-                    //noinspection ConstantConditions
-                    var sensorOrientation = (int)characteristics.Get(CameraCharacteristics.SensorOrientation);
-                    bool swappedDimensions = false;
-                    switch (displayRotation)
-                    {
-                        case SurfaceOrientation.Rotation0:
-                        case SurfaceOrientation.Rotation180:
-                            if (sensorOrientation == 90 || sensorOrientation == 270)
-                            {
-                                swappedDimensions = true;
-                            }
-                            break;
-                        case SurfaceOrientation.Rotation90:
-                        case SurfaceOrientation.Rotation270:
-                            if (sensorOrientation == 0 || sensorOrientation == 180)
-                            {
-                                swappedDimensions = true;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-
-                    Point displaySize = new Point();
-                    activity.WindowManager.DefaultDisplay.GetSize(displaySize);
-                    var rotatedPreviewWidth = width;
-                    var rotatedPreviewHeight = height;
-                    var maxPreviewWidth = displaySize.X;
-                    var maxPreviewHeight = displaySize.Y;
-
-                    if (swappedDimensions)
-                    {
-                        rotatedPreviewWidth = height;
-                        rotatedPreviewHeight = width;
-                        maxPreviewWidth = displaySize.Y;
-                        maxPreviewHeight = displaySize.X;
-                    }
-
-                    if (maxPreviewWidth > MAX_PREVIEW_WIDTH)
-                    {
-                        maxPreviewWidth = MAX_PREVIEW_WIDTH;
-                    }
-
-                    if (maxPreviewHeight > MAX_PREVIEW_HEIGHT)
-                    {
-                        maxPreviewHeight = MAX_PREVIEW_HEIGHT;
-                    }
-
-                    // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
-                    // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
-                    // garbage capture data.
-                    //_previewSize = ChooseOptimalSize(map.GetOutputSizes(Class.FromType(typeof(SurfaceTexture))),
-                    //    rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                    //    maxPreviewHeight, largest);
-
-                    Size largest = new Size(maxPreviewWidth, maxPreviewHeight);
-                    var aspectRatio = ChooseOptimalSize(map.GetOutputSizes(Class.FromType(typeof(SurfaceTexture))),
-                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                        maxPreviewHeight, largest);
-
-                    //_textureView.SetAspectRatio(aspectRatio.Height, aspectRatio.Width);
-                    //_textureView.SetAspectRatio(aspectRatio.Width, aspectRatio.Height);
-
-                    return;
-                }
-            }
-            catch (CameraAccessException e)
-            {
-                e.PrintStackTrace();
-            }
-            catch (NullPointerException e)
-            {
-                // Currently an NPE is thrown when the Camera2API is used but not supported on the
-                // device this code runs.
-                Console.WriteLine(e);
-            }
-        }
-
-
-        public void ConfigureTransform(int viewWidth, int viewHeight)
-        {
-            Activity activity = this;
-            if (null == _textureView || null == _previewSize || null == activity)
-            {
-                return;
-            }
-            var rotation = (int)activity.WindowManager.DefaultDisplay.Rotation;
-            Matrix matrix = new Matrix();
-            RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
-            RectF bufferRect = new RectF(0, 0, _previewSize.Height, _previewSize.Width);
-            float centerX = viewRect.CenterX();
-            float centerY = viewRect.CenterY();
-            if ((int)SurfaceOrientation.Rotation90 == rotation || (int)SurfaceOrientation.Rotation270 == rotation)
-            {
-                bufferRect.Offset(centerX - bufferRect.CenterX(), centerY - bufferRect.CenterY());
-                matrix.SetRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.Fill);
-                float scale = Math.Max((float)viewHeight / _previewSize.Height, (float)viewWidth / _previewSize.Width);
-                matrix.PostScale(scale, scale, centerX, centerY);
-                matrix.PostRotate(90 * (rotation - 2), centerX, centerY);
-            }
-            else if ((int)SurfaceOrientation.Rotation180 == rotation)
-            {
-                matrix.PostRotate(180, centerX, centerY);
-            }
-            _textureView.SetTransform(matrix);
-        }
-
         private void SetTextureViewSize()
         {
             var previewWidth = _previewSize.Height;
@@ -301,9 +119,6 @@ namespace RecognizerTestApp
 
             _previewSize = _camera.GetParameters().PreviewSize;
 
-            //SetUpCameraOutputs(_textureView.Width, _textureView.Height);
-            //ConfigureTransform(_textureView.Width, _textureView.Height);
-
             SetTextureViewSize();
 
             _camera.SetPreviewTexture(surface);
@@ -339,7 +154,6 @@ namespace RecognizerTestApp
                 _overlayView.ForceLayout();
                 _textView.Text = result;
             });
-            
         }
 
         private void RecognizerServiceCroppedImageUpdated(object sender, Bitmap bitmap)
@@ -371,12 +185,19 @@ namespace RecognizerTestApp
 
         private async Task RecognizeText()
         {
-            var updatedBitmap = _textureView.GetBitmap(_textureView.Bitmap.Width, _textureView.Bitmap.Height);
+            try
+            {
+                var updatedBitmap = _textureView.GetBitmap(_textureView.Bitmap.Width, _textureView.Bitmap.Height);
 
-            var result = await _recognizerService.RecognizeText(updatedBitmap);
+                var result = await _recognizerService.RecognizeText(updatedBitmap);
 
-            _textView.Text = $"{CommonResources.common_quality}: {result.Quality}%";
-            _overlayView.ForceLayout();
+                _textView.Text = $"{CommonResources.common_quality}: {result.Quality}%";
+                _overlayView.ForceLayout();
+            }
+            catch (System.Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         public override bool OnCreateOptionsMenu(IMenu menu)
@@ -408,6 +229,9 @@ namespace RecognizerTestApp
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
+            TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
 
             RequestedOrientation = ScreenOrientation.Portrait;
 
@@ -443,6 +267,16 @@ namespace RecognizerTestApp
 
             _textureView.SurfaceTextureListener = this;
 
+        }
+
+        private void TaskSchedulerOnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            var newExc = new Exception("TaskSchedulerOnUnobservedTaskException", e.Exception);
+        }
+
+        private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            var newExc = new Exception("CurrentDomainOnUnhandledException", e.ExceptionObject as Exception);
         }
 
         private void CheckRights()

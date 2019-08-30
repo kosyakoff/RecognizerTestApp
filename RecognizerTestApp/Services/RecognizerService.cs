@@ -179,64 +179,71 @@ namespace RecognizerTestApp.Services
         {
             //Stopwatch timer = Stopwatch.StartNew();
 
-            _textureViewBitmap = textureViewBitmap;
-
-            _textureViewBitmap.GetPixels(_bitmapPixelArray, 0, _textureSize.Width, 0, 0, _textureSize.Width,
-                _textureSize.Height);
-
-            _tempRecognitionResult.Invalidate();
-            _finalRecognitionResult.Invalidate();
-
-            _currentBufferHorSize = PRIMARY_CROP_BUFFER_HOR;
-            _currentBufferVerSize = PRIMARY_CROP_BUFFER_VER;
-
-            _currentAccuracy = PRIMARY_ACCURACY;
-
-            await PerformRecognizing(_textureViewBitmap);
-
-            UpdateFinalRecognitionResult();
-
-            if (GeneralSettings.UseProgressiveSearch)
+            try
             {
-                if (_tempRecognitionResult.Quality > LOWER_RECOGNITION_VALUE && _tempRecognitionResult.Quality < UPPER_RECOGNITION_VALUE)
-                {
-                    _currentAccuracy = BIGGER_ACCURACY;
-                    await PerformRecognizing(_textureViewBitmap);
+                _textureViewBitmap = textureViewBitmap;
 
-                    if (_tempRecognitionResult.Quality > _finalRecognitionResult.Quality)
+                _textureViewBitmap.GetPixels(_bitmapPixelArray, 0, _textureSize.Width, 0, 0, _textureSize.Width,
+                    _textureSize.Height);
+
+                _tempRecognitionResult.Invalidate();
+                _finalRecognitionResult.Invalidate();
+
+                _currentBufferHorSize = PRIMARY_CROP_BUFFER_HOR;
+                _currentBufferVerSize = PRIMARY_CROP_BUFFER_VER;
+
+                _currentAccuracy = PRIMARY_ACCURACY;
+
+                await PerformRecognizing(_textureViewBitmap);
+
+                UpdateFinalRecognitionResult();
+
+                if (GeneralSettings.UseProgressiveSearch)
+                {
+                    if (_tempRecognitionResult.Quality > LOWER_RECOGNITION_VALUE && _tempRecognitionResult.Quality < UPPER_RECOGNITION_VALUE)
                     {
-                        UpdateFinalRecognitionResult();
-                    }
-                    else
-                    {
-                        _currentAccuracy = SMALLER_ACCURACY;
+                        _currentAccuracy = BIGGER_ACCURACY;
                         await PerformRecognizing(_textureViewBitmap);
 
                         if (_tempRecognitionResult.Quality > _finalRecognitionResult.Quality)
+                        {
                             UpdateFinalRecognitionResult();
+                        }
+                        else
+                        {
+                            _currentAccuracy = SMALLER_ACCURACY;
+                            await PerformRecognizing(_textureViewBitmap);
+
+                            if (_tempRecognitionResult.Quality > _finalRecognitionResult.Quality)
+                                UpdateFinalRecognitionResult();
+                        }
                     }
                 }
+
+                //var overlayRect = new Rect(
+                //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Bottom,
+                //    _finalRecognitionResult.BoundingBox.Left,
+                //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Top,
+                //    _bBox.Right);
+                OverlayRectUpdated?.Invoke(this, _finalRecognitionResult.BoundingBox);
+
+                textureViewBitmap.Dispose();
+
+                //timer.Stop();
+                //TimeSpan timespan = timer.Elapsed;
+
+                if (_finalRecognitionResult.Quality >= UPPER_RECOGNITION_VALUE)
+                {
+                    SearchComplete = true;
+                    RecordWasFound?.Invoke(this,_finalRecognitionResult.OriginalText);
+                }
+
+                RecognizingTextInProgress = false;
             }
-
-            //var overlayRect = new Rect(
-            //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Bottom,
-            //    _finalRecognitionResult.BoundingBox.Left,
-            //    _textureSize.Height - _finalRecognitionResult.BoundingBox.Top,
-            //    _bBox.Right);
-            OverlayRectUpdated?.Invoke(this, _finalRecognitionResult.BoundingBox);
-
-            textureViewBitmap.Dispose();
-
-            //timer.Stop();
-            //TimeSpan timespan = timer.Elapsed;
-
-            if (_finalRecognitionResult.Quality >= UPPER_RECOGNITION_VALUE)
+            catch (Exception e)
             {
-                SearchComplete = true;
-                RecordWasFound?.Invoke(this,_finalRecognitionResult.OriginalText);
+                Console.WriteLine(e);
             }
-
-            RecognizingTextInProgress = false;
 
             return _finalRecognitionResult;
         }
