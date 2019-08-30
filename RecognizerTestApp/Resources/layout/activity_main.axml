@@ -17,7 +17,6 @@
     android:theme="@style/Base.ThemeOverlay.AppCompat.ActionBar"/>
 
 	<FrameLayout
-		android:background="@android:color/holo_orange_dark"
 	android:layout_below="@+id/toolbar"
 	android:layout_above="@+id/text_view"
     android:layout_width="match_parent"
