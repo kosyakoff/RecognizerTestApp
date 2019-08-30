@@ -6,5 +6,7 @@
 
         public static bool UseProgressiveSearch = true;
 
+        public static bool UseSearchBoxDelimeter = true;
+
     }
 }

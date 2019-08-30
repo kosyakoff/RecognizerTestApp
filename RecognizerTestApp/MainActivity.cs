@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Android;
 using Android.App;
-using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.Hardware.Camera2;
@@ -13,7 +12,6 @@ using Android.OS;
 using Android.Support.V4.App;
 using Android.Support.V4.Content;
 using Android.Support.V7.App;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Java.Lang;
@@ -25,6 +23,7 @@ using RecognizerTestApp.Settings;
 using Camera = Android.Hardware.Camera;
 using Exception = System.Exception;
 using Math = System.Math;
+using Size = Android.Util.Size;
 using Toolbar = Android.Support.V7.Widget.Toolbar;
 
 namespace RecognizerTestApp
@@ -42,6 +41,9 @@ namespace RecognizerTestApp
 
         // Max preview height that is guaranteed by Camera2 API
         private static readonly int MAX_PREVIEW_HEIGHT = 1080;
+
+        private const int _colorBasedSearchBitmapHeight = 900;
+        private double _searchBoxDelimeter = 1;
 
         private Camera _camera;
 
@@ -139,8 +141,15 @@ namespace RecognizerTestApp
                         GravityFlags.CenterVertical | GravityFlags.CenterHorizontal);
             });
 
+            if (GeneralSettings.UseSearchBoxDelimeter)
+            {
+                _searchBoxDelimeter = (double)_realSurfaceSize.Height / _colorBasedSearchBitmapHeight;
+            }
 
-            await _recognizerService.Init(ApplicationContext, new Size(_realSurfaceSize.Height , _realSurfaceSize.Width));
+
+            await _recognizerService.Init(ApplicationContext,
+                new Size((int)(_realSurfaceSize.Height / _searchBoxDelimeter), (int)(_realSurfaceSize.Width / _searchBoxDelimeter)));
+
             _recognizerService.OverlayRectUpdated += RecognizerServiceOverlayRectUpdated;
             _recognizerService.CroppedImageUpdated += RecognizerServiceCroppedImageUpdated;
             _recognizerService.RecordWasFound += RecognizerServiceRecordWasFound;
@@ -232,7 +241,9 @@ namespace RecognizerTestApp
         {
             try
             {
-                var updatedBitmap = _textureView.GetBitmap(_textureView.Bitmap.Width, _textureView.Bitmap.Height);
+                var updatedBitmap = _textureView.
+                    GetBitmap((int)(_textureView.Bitmap.Width /_searchBoxDelimeter), 
+                        (int)(_textureView.Bitmap.Height / _searchBoxDelimeter));
 
                 var result = await _recognizerService.RecognizeText(updatedBitmap);
 
@@ -434,7 +445,28 @@ namespace RecognizerTestApp
 
         private void RecognizerServiceOverlayRectUpdated(object sender, Rect rect)
         {
-            _overlayView.Rect = rect;
+            if (rect.IsEmpty)
+            {
+                _overlayView.Rect = rect;
+                return;
+            }
+
+            int horLength = (int)(Math.Abs(rect.CenterX() - rect.Left) * _searchBoxDelimeter);
+            int verLength = (int)(Math.Abs(rect.CenterY() - rect.Top) * _searchBoxDelimeter);
+
+            Rect resizedRect = new Rect((int)(rect.Left * _searchBoxDelimeter), 
+                (int)(rect.Top * _searchBoxDelimeter),
+                (int)(rect.Right * _searchBoxDelimeter),
+                (int)(rect.Bottom * _searchBoxDelimeter));
+
+            _overlayView.Rect = resizedRect;
+
+            //int horLength = (int)(Math.Abs(rect.CenterX() - rect.Left) * _searchBoxDelimeter);
+            //int verLength = (int)(Math.Abs(rect.CenterY() - rect.Top) * _searchBoxDelimeter);
+
+            //Rect resizedRect = new Rect(rect.CenterX() - horLength, rect.CenterY() - verLength, rect.CenterX() + horLength, rect.CenterY() + verLength);
+
+            //_overlayView.Rect = resizedRect;
         }
     }
 }
