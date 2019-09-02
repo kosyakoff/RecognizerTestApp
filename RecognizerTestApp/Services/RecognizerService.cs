@@ -284,7 +284,7 @@ namespace RecognizerTestApp.Services
 
                 OverlayRectUpdated?.Invoke(this, _tempRecognitionResult.BoundingBox);
 
-                textureViewBitmap.Dispose();
+                //textureViewBitmap.Dispose();
 
                 //timer.Stop();
                 //TimeSpan timespan = timer.Elapsed;

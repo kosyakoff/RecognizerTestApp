@@ -138,8 +138,11 @@ namespace RecognizerTestApp
                         GravityFlags.CenterVertical | GravityFlags.CenterHorizontal);
             });
 
-
-
+            if (_searchBitmap == null)
+            {
+                _searchBitmap = Bitmap.CreateBitmap(_realSurfaceSize.Height,
+                    _realSurfaceSize.Width, Bitmap.Config.Argb8888);
+            }
 
             await _recognizerService.Init(ApplicationContext,
                 new Size(_realSurfaceSize.Height, _realSurfaceSize.Width));
@@ -231,15 +234,20 @@ namespace RecognizerTestApp
             }
         }
 
+        private Bitmap _searchBitmap;
+
         private async Task RecognizeText()
         {
             try
             {
-                var updatedBitmap = _textureView.
-                    GetBitmap(_textureView.Bitmap.Width,
-                        _textureView.Bitmap.Height);
+                //var updatedBitmap = _textureView.
+                //    GetBitmap(_textureView.Bitmap.Width,
+                //        _textureView.Bitmap.Height);
 
-                var result = await _recognizerService.RecognizeText(updatedBitmap);
+                    _textureView.
+                    GetBitmap(_searchBitmap);
+
+                var result = await _recognizerService.RecognizeText(_searchBitmap);
 
                 _textView.Text = $"{CommonResources.common_quality}: {result.Quality}%";
                 _overlayView.ForceLayout();
