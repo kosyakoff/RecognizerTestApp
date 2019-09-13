@@ -2,9 +2,9 @@
 {
     public static class GeneralSettings
     {
-        public static bool ShowCroppedImage = true;
+        public static bool ShowCroppedImage = false;
 
-        public static bool UseDebugFeatures = true;
+        public static bool UseDebugFeatures = false;
 
         public static bool UseProgressiveSearch = true;
 

@@ -24,6 +24,7 @@ namespace RecognizerTestApp.Services
         private const int PRIMARY_ACCURACY = 20;
         private const int BIGGER_ACCURACY = 25;
         private const int SMALLER_ACCURACY = 15;
+
         private const int MAX_TEXT_LENGTH = 160;
 
         private const int MIN_TEXT_LENGTH = 50;
@@ -37,7 +38,7 @@ namespace RecognizerTestApp.Services
         private int _searchBoxDelimiter = 1;
 
 
-        // public float CurrentContrast = 1;
+         public float CurrentContrast = 0.9f;
 
         private readonly Rect _bBox = new Rect();
 
@@ -59,8 +60,8 @@ namespace RecognizerTestApp.Services
         private FirebaseVisionTextRecognizer _firebaseVisionTextDetector;
         private RecognizingActor _recognizingActor;
 
-        private const int LOWER_RECOGNITION_VALUE = 65;
-        private const int UPPER_RECOGNITION_VALUE = 79;
+        private const int LOWER_RECOGNITION_VALUE = 45;
+        private const int UPPER_RECOGNITION_VALUE = 60;
 
         public volatile bool RecognizingTextInProgress;
         public volatile bool SearchComplete;
@@ -72,9 +73,8 @@ namespace RecognizerTestApp.Services
         private readonly List<Color> _allReferenceColors = new List<Color>
         {
             new Color(65, 113, 127),
-            new Color(92,111,110),
-            
-            //new Color(158, 74, 74),
+            new Color(62,108,124),
+
         };
 
         private TesseractApi _tesseractApi;
@@ -370,8 +370,8 @@ namespace RecognizerTestApp.Services
                             false);
 
                     croppedBitmap = BitmapOperator.DrawDitheringBorder(croppedBitmap, _currentBufferVerSize);
-                    //croppedBitmap = BitmapOperator.TurnToGrayScale(croppedBitmap);
-                    //croppedBitmap = BitmapOperator.ChangeBitmapContrastBrightness(croppedBitmap, CurrentContrast, 0);
+                    croppedBitmap = BitmapOperator.TurnToGrayScale(croppedBitmap);
+                    croppedBitmap = BitmapOperator.ChangeBitmapContrastBrightness(croppedBitmap, CurrentContrast, 0);
                 }
 
                 switch (_recognizingActor)
