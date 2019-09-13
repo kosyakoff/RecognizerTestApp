@@ -302,6 +302,8 @@ namespace RecognizerTestApp
         {
             base.OnCreate(savedInstanceState);
 
+            Window.AddFlags(WindowManagerFlags.KeepScreenOn);
+
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
 
@@ -365,6 +367,11 @@ namespace RecognizerTestApp
 
             _textureView.SurfaceTextureListener = this;
 
+            if (!GeneralSettings.UseDebugFeatures)
+            {
+                _toolbar.Visibility = ViewStates.Gone;
+                _delimButton.Visibility = ViewStates.Gone;
+            }
         }
 
         private bool _flashOn;

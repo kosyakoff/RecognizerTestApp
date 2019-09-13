@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Android.Content;
@@ -20,9 +21,9 @@ namespace RecognizerTestApp.Services
 {
     public class RecognizerService
     {
-        private const int PRIMARY_ACCURACY = 15;
-        private const int BIGGER_ACCURACY = 20;
-        private const int SMALLER_ACCURACY = 10;
+        private const int PRIMARY_ACCURACY = 20;
+        private const int BIGGER_ACCURACY = 25;
+        private const int SMALLER_ACCURACY = 15;
         private const int MAX_TEXT_LENGTH = 160;
 
         private const int MIN_TEXT_LENGTH = 50;
@@ -71,7 +72,9 @@ namespace RecognizerTestApp.Services
         private readonly List<Color> _allReferenceColors = new List<Color>
         {
             new Color(65, 113, 127),
-            new Color(158, 74, 74),
+            new Color(92,111,110),
+            
+            //new Color(158, 74, 74),
         };
 
         private TesseractApi _tesseractApi;
@@ -286,9 +289,6 @@ namespace RecognizerTestApp.Services
 
                 //textureViewBitmap.Dispose();
 
-                //timer.Stop();
-                //TimeSpan timespan = timer.Elapsed;
-
                 if (_finalRecognitionResult.Quality >= UPPER_RECOGNITION_VALUE)
                 {
                     SearchComplete = true;
@@ -305,6 +305,9 @@ namespace RecognizerTestApp.Services
                         NoTextWasFound?.Invoke(this,EventArgs.Empty);
                     }
                 }
+
+                //timer.Stop();
+                //TimeSpan timespan = timer.Elapsed;
 
                 RecognizingTextInProgress = false;
             }
