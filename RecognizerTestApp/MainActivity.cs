@@ -1,23 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Android;
 using Android.App;
 using Android.Content.PM;
 using Android.Graphics;
-using Android.Hardware.Camera2;
-using Android.Hardware.Camera2.Params;
 using Android.OS;
 using Android.Support.V4.App;
 using Android.Support.V4.Content;
 using Android.Support.V7.App;
 using Android.Views;
 using Android.Widget;
-using Java.Lang;
-using Java.Util;
 using Recognizer.Core.Resources.Strings;
-using RecognizerTestApp.Helpers;
 using RecognizerTestApp.Services;
 using RecognizerTestApp.Settings;
 using Camera = Android.Hardware.Camera;
@@ -332,6 +326,8 @@ namespace RecognizerTestApp
                 _delimButton.Visibility = ViewStates.Visible;
                 _delimButton.Text = _recognizerService.SearchBoxDelimiter.ToString();
             }
+
+            _serviceText.Text = CommonResources.place_cursor_on_text;
 
             _delimButton.Click += (obj, e) =>
             {
