@@ -5,7 +5,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Android.Content;
 using Android.Graphics;
-using Android.Util;
 using Firebase;
 using Firebase.ML.Vision;
 using Firebase.ML.Vision.Common;
@@ -38,7 +37,14 @@ namespace RecognizerTestApp.Services
         private int _searchBoxDelimiter = 1;
 
 
-         public float CurrentContrast = 0.9f;
+        public float HMax = 0;
+        public float SMax = 0;
+        public float VMax = 0;
+        public float HMin = 0;
+        public float SMin = 0;
+        public float VMin = 0;
+
+        public float CurrentContrast = 0.9f;
 
         private readonly Rect _bBox = new Rect();
 
@@ -51,7 +57,7 @@ namespace RecognizerTestApp.Services
         private Context _appContext;
 
         private int[] _bitmapPixelArray;
-        private Size _textureSize;
+        private Rect _textureRect;
 
         private int _currentAccuracy = PRIMARY_ACCURACY;
 
@@ -77,23 +83,26 @@ namespace RecognizerTestApp.Services
 
         };
 
+        public Rect SearchRect { get; set; }
+
         private TesseractApi _tesseractApi;
         private Bitmap _textureViewBitmap;
 
         public event EventHandler<Rect> OverlayRectUpdated;
         public event EventHandler<Bitmap> CroppedImageUpdated;
-        public event EventHandler<string> RecordWasFound;
+        public event EventHandler<Bitmap> VisionImageUpdated;
+        public event EventHandler<RecognitionResult> RecordWasFound;
         public event EventHandler SomeIncorrectTextWasFound;
         public event EventHandler NoTextWasFound;
 
         private bool _referenceColorIsSet;
+        private Bitmap _visionBitmap;
 
         public int SearchBoxDelimiter
         {
             get { return _searchBoxDelimiter; }
             set { _searchBoxDelimiter = value; }
         }
-
 
         private void GetCroppingBoundingBox(int updateBitmapHeight, int updateBitmapWidth)
         {
@@ -109,16 +118,9 @@ namespace RecognizerTestApp.Services
                         var pixelColor = _bitmapPixelArray[j * updateBitmapWidth + i];
                         var red = Color.GetRedComponent(pixelColor);
 
-                        // applicableColors.AddRange(_allReferenceColors.Where(x => Math.Abs(x.R - red) < _currentAccuracy));
-
                         var green = Color.GetGreenComponent(pixelColor);
 
-                        //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.G - green) >= _currentAccuracy)).ToList();
-
                         var blue = Color.GetBlueComponent(pixelColor);
-
-                        //applicableColors = applicableColors.Except(applicableColors.Where(x => Math.Abs(x.B - blue) >= _currentAccuracy)).ToList();
-
                         if (_referenceColorIsSet)
                         {
                             CheckReferenceColorBbox(j, i, red, green, blue);
@@ -178,7 +180,7 @@ namespace RecognizerTestApp.Services
                 _bBox.Bottom = y;
         }
 
-        private void ExportBitmapAsPNG(Bitmap bitmap)
+        public void ExportBitmapAsPNG(Bitmap bitmap)
         {
             var sdCardPath = Environment.ExternalStorageDirectory.AbsolutePath;
             var filePath = Path.Combine(sdCardPath, "test.png");
@@ -218,14 +220,12 @@ namespace RecognizerTestApp.Services
             }
         }
 
-        public async Task Init(Context appContext, Size size)
+        public async Task Init(Context appContext, Rect rect)
         {
-
-
             _appContext = appContext ?? throw new ArgumentNullException(nameof(appContext));
-            _textureSize = size ?? throw new ArgumentNullException(nameof(size));
+            _textureRect = rect ?? throw new ArgumentNullException(nameof(rect));
 
-            _bitmapPixelArray = new int[_textureSize.Width * _textureSize.Height];
+            _bitmapPixelArray = new int[rect.Width() * rect.Height()];
 
             InitFirebase();
             await InitTesseract();
@@ -236,8 +236,10 @@ namespace RecognizerTestApp.Services
         private async Task InitTesseract()
         {
             _tesseractApi = new TesseractApi(_appContext, AssetsDeployment.OncePerVersion);
-
+        
             await _tesseractApi.Init("rus");
+
+            _tesseractApi.SetBlacklist("`~!@#$;%^:?&*()-_+=|/.,<>}{]['…“№*+-¡©´·ˆˇˈˉˊˋˎˏ‘„‚.’—123456789");
         }
 
         public async Task<RecognitionResult> RecognizeText(Bitmap textureViewBitmap)
@@ -248,11 +250,34 @@ namespace RecognizerTestApp.Services
             {
                 _textureViewBitmap = textureViewBitmap;
 
-                _textureViewBitmap.GetPixels(_bitmapPixelArray, 0, _textureSize.Width, 0, 0, _textureSize.Width,
-                    _textureSize.Height);
+                _textureViewBitmap.GetPixels(_bitmapPixelArray, 0, _textureRect.Width(), 0, 0, _textureRect.Width(),
+                    _textureRect.Height());
 
                 _tempRecognitionResult.Invalidate();
                 _finalRecognitionResult.Invalidate();
+
+                if (GeneralSettings.ShowVisionImage)
+                {
+                    
+                    await Task.Factory.StartNew(GetVisionBitmap);
+
+                    await TesseractTextRecognizing(_visionBitmap);
+                    UpdateFinalRecognitionResult();
+
+                    if (_finalRecognitionResult.Quality >= UPPER_RECOGNITION_VALUE)
+                    {
+                        var result = new RecognitionResult(_finalRecognitionResult);
+                        RecordWasFound?.Invoke(this, result);
+                    }
+
+                    VisionImageUpdated?.Invoke(this, _visionBitmap);
+                }
+
+                if (GeneralSettings.OnlySearchObjects)
+                {
+                    RecognizingTextInProgress = false;
+                    return _finalRecognitionResult;
+                }
 
                 _currentBufferHorSize = PRIMARY_CROP_BUFFER_HOR;
                 _currentBufferVerSize = PRIMARY_CROP_BUFFER_VER;
@@ -292,7 +317,7 @@ namespace RecognizerTestApp.Services
                 if (_finalRecognitionResult.Quality >= UPPER_RECOGNITION_VALUE)
                 {
                     SearchComplete = true;
-                    RecordWasFound?.Invoke(this, _finalRecognitionResult.OriginalText);
+                    RecordWasFound?.Invoke(this, _finalRecognitionResult);
                 }
                 else
                 {
@@ -331,21 +356,100 @@ namespace RecognizerTestApp.Services
         {
             try
             {
-                GetCroppingBoundingBox(_textureSize.Height, _textureSize.Width);
+                //GetCroppingBoundingBox(_textureRect.Height(), _textureRect.Width());
 
                 if (!_bBox.IsEmpty)
                 {
-                    await PerformRecognizingInternal(updatedBitmap);
+                    if (!GeneralSettings.OnlySearchObjects)
+                    {
+                        await PerformRecognizingInternal(updatedBitmap);
+                    }
                 }
-                else
-                {
-                    _tempRecognitionResult.Invalidate();
-                    NoTextWasFound?.Invoke(this, EventArgs.Empty);
-                }
+                //else
+                //{
+                //    _tempRecognitionResult.Invalidate();
+                //    NoTextWasFound?.Invoke(this, EventArgs.Empty);
+                //}
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
+            }
+        }
+
+        private void GetVisionBitmap()
+        {
+            Stopwatch timer = Stopwatch.StartNew();
+
+            _visionBitmap = _textureViewBitmap;
+
+            int[] currentBitmapPixelArray = new int[_textureRect.Width() * _textureRect.Height()];
+            for (int i = 0; i < currentBitmapPixelArray.Length; i++)
+            {
+                currentBitmapPixelArray[i] = Color.White;
+            }
+
+
+            int number_of_color = 0;
+            float[] hsv = new float[3];
+            for (var j = 0; j < _visionBitmap.Height; j++)
+            {
+                for (var i = 0; i < _visionBitmap.Width; i++)
+                {
+                    var pixelColor = _bitmapPixelArray[j * _visionBitmap.Width + i];
+
+                    //var lume = ColorUtils.CalculateLuminance(pixelColor);
+                    //if (lume < 0.10 || lume > 0.6)
+                    //{
+                    //    _visionBitmap.SetPixel(i, j, Color.White);
+                    //    continue;
+                    //}
+
+                    var red = Color.GetRedComponent(pixelColor);
+                    var green = Color.GetGreenComponent(pixelColor);
+                    var blue = Color.GetBlueComponent(pixelColor);
+                    Color.RGBToHSV(red, green, blue, hsv);
+
+
+                    //if (hsv[0] >= HMax ||
+                    //    hsv[0] <= HMin ||
+                    //    hsv[1] >= SMax ||
+                    //    hsv[1] <= SMin ||
+                    //    hsv[2] >= VMax ||
+                    //    hsv[2] <= VMin)
+                    //{
+                    //    _visionBitmap.SetPixel(i, j, Color.White);
+                    //}
+                    //else
+                    //{
+                    //    _visionBitmap.SetPixel(i, j, Color.Black);
+                    //}
+
+                    if (hsv[2] < 0.35 || hsv[2] > 0.80
+                        //|| hsv[1] < 0.10 || hsv[1] > 0.35
+                        || hsv[0] < 180 || hsv[0] > 200)
+                    {
+                        //_visionBitmap.SetPixel(i, j, Color.White);
+                        continue;
+                    }
+
+                    currentBitmapPixelArray[j * _visionBitmap.Width + i] = _bitmapPixelArray[j * _visionBitmap.Width + i];
+                    number_of_color++;
+
+                }
+            }
+
+            _visionBitmap.SetPixels(currentBitmapPixelArray, 0, _textureRect.Width(), 0, 0, _textureRect.Width(), _textureRect.Height());
+
+            if (((float) number_of_color) / currentBitmapPixelArray.Length > 0.25)
+            {
+           
+            _visionBitmap = BitmapOperator.ChangeBitmapContrastBrightness(_visionBitmap, CurrentContrast, 0);
+
+            _visionBitmap = BitmapOperator.TurnToGrayScale(_visionBitmap);
+
+            
+            timer.Stop();
             }
         }
 
@@ -405,8 +509,8 @@ namespace RecognizerTestApp.Services
         {
             _bBox.Left = _bBox.Left - horVal >= 0 ? _bBox.Left - horVal : _bBox.Left;
             _bBox.Top = _bBox.Top - verVal >= 0 ? _bBox.Top - verVal : _bBox.Top;
-            _bBox.Right = _bBox.Right + horVal < _textureSize.Width ? _bBox.Right + horVal : _bBox.Right;
-            _bBox.Bottom = _bBox.Bottom + verVal < _textureSize.Height ? _bBox.Bottom + verVal : _bBox.Bottom;
+            _bBox.Right = _bBox.Right + horVal < _textureRect.Width() ? _bBox.Right + horVal : _bBox.Right;
+            _bBox.Bottom = _bBox.Bottom + verVal < _textureRect.Height() ? _bBox.Bottom + verVal : _bBox.Bottom;
         }
 
         private async Task FirebaseTextRecognizing(Bitmap croppedBitmap)
@@ -440,8 +544,8 @@ namespace RecognizerTestApp.Services
             {
                 if (_tesseractApi != null && _tesseractApi.Initialized)
                 {
-                    var success = await _tesseractApi.Recognise(croppedBitmap);
-                    var text = success ? _tesseractApi.Text : string.Empty;
+                    var success = await _tesseractApi.Recognise(croppedBitmap); 
+                     var text = success ? _tesseractApi.Text : string.Empty;
 
                     SetRecognitionResultFromText(text.Length < MAX_TEXT_LENGTH ? text : string.Empty);
                 }

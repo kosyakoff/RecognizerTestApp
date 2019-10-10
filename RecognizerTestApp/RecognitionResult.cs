@@ -9,6 +9,14 @@ namespace RecognizerTestApp
             Invalidate();
         }
 
+        public RecognitionResult(RecognitionResult result)
+        {
+            ResultText = result.ResultText;
+            OriginalText = result.OriginalText;
+            Quality = result.Quality;
+            BoundingBox = result.BoundingBox;
+        }
+
         public string ResultText { get; set; }
         public string OriginalText { get; set; }
         public double Quality { get; set; }

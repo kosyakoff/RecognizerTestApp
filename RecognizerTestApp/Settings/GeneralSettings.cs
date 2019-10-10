@@ -4,11 +4,15 @@
     {
         public static bool ShowCroppedImage = false;
 
-        public static bool UseDebugFeatures = false;
+        public static bool ShowVisionImage = true;
+
+        public static bool UseDebugFeatures = true;
 
         public static bool UseProgressiveSearch = true;
 
         public static bool UseSearchBoxDelimeter = true;
+
+        public static bool OnlySearchObjects = true;
 
     }
 }
