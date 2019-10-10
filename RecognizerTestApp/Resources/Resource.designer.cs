@@ -3184,8 +3184,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0046
 			public const int SYM = 2131492934;
 			
-			// aapt resource value: 0x7f0c00c9
-			public const int action0 = 2131493065;
+			// aapt resource value: 0x7f0c00bc
+			public const int action0 = 2131493052;
 			
 			// aapt resource value: 0x7f0c0094
 			public const int action_bar = 2131493012;
@@ -3208,17 +3208,17 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0070
 			public const int action_bar_title = 2131492976;
 			
-			// aapt resource value: 0x7f0c00c6
-			public const int action_container = 2131493062;
+			// aapt resource value: 0x7f0c00b9
+			public const int action_container = 2131493049;
 			
 			// aapt resource value: 0x7f0c0095
 			public const int action_context_bar = 2131493013;
 			
-			// aapt resource value: 0x7f0c00cd
-			public const int action_divider = 2131493069;
+			// aapt resource value: 0x7f0c00c0
+			public const int action_divider = 2131493056;
 			
-			// aapt resource value: 0x7f0c00c7
-			public const int action_image = 2131493063;
+			// aapt resource value: 0x7f0c00ba
+			public const int action_image = 2131493050;
 			
 			// aapt resource value: 0x7f0c0003
 			public const int action_menu_divider = 2131492867;
@@ -3235,11 +3235,11 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0072
 			public const int action_mode_close_button = 2131492978;
 			
-			// aapt resource value: 0x7f0c00c8
-			public const int action_text = 2131493064;
+			// aapt resource value: 0x7f0c00bb
+			public const int action_text = 2131493051;
 			
-			// aapt resource value: 0x7f0c00d6
-			public const int actions = 2131493078;
+			// aapt resource value: 0x7f0c00c9
+			public const int actions = 2131493065;
 			
 			// aapt resource value: 0x7f0c0073
 			public const int activity_chooser_view_content = 2131492979;
@@ -3262,12 +3262,6 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0047
 			public const int always = 2131492935;
 			
-			// aapt resource value: 0x7f0c00b0
-			public const int around_seekBar = 2131493040;
-			
-			// aapt resource value: 0x7f0c00af
-			public const int around_text = 2131493039;
-			
 			// aapt resource value: 0x7f0c006c
 			public const int async = 2131492972;
 			
@@ -3286,8 +3280,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0079
 			public const int buttonPanel = 2131492985;
 			
-			// aapt resource value: 0x7f0c00ca
-			public const int cancel_action = 2131493066;
+			// aapt resource value: 0x7f0c00bd
+			public const int cancel_action = 2131493053;
 			
 			// aapt resource value: 0x7f0c0054
 			public const int center = 2131492948;
@@ -3301,8 +3295,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c008d
 			public const int checkbox = 2131493005;
 			
-			// aapt resource value: 0x7f0c00d2
-			public const int chronometer = 2131493074;
+			// aapt resource value: 0x7f0c00c5
+			public const int chronometer = 2131493061;
 			
 			// aapt resource value: 0x7f0c0068
 			public const int clip_horizontal = 2131492968;
@@ -3313,8 +3307,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0048
 			public const int collapseActionView = 2131492936;
 			
-			// aapt resource value: 0x7f0c00bc
-			public const int container = 2131493052;
+			// aapt resource value: 0x7f0c00af
+			public const int container = 2131493039;
 			
 			// aapt resource value: 0x7f0c0089
 			public const int content = 2131493001;
@@ -3322,8 +3316,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c007c
 			public const int contentPanel = 2131492988;
 			
-			// aapt resource value: 0x7f0c00bd
-			public const int coordinator = 2131493053;
+			// aapt resource value: 0x7f0c00b0
+			public const int coordinator = 2131493040;
 			
 			// aapt resource value: 0x7f0c0083
 			public const int custom = 2131492995;
@@ -3334,29 +3328,29 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c002b
 			public const int dark = 2131492907;
 			
+			// aapt resource value: 0x7f0c00ab
+			public const int debug_view = 2131493035;
+			
 			// aapt resource value: 0x7f0c0092
 			public const int decor_content_parent = 2131493010;
 			
 			// aapt resource value: 0x7f0c0076
 			public const int default_activity_button = 2131492982;
 			
-			// aapt resource value: 0x7f0c00aa
-			public const int delim_button = 2131493034;
+			// aapt resource value: 0x7f0c00b2
+			public const int design_bottom_sheet = 2131493042;
 			
-			// aapt resource value: 0x7f0c00bf
-			public const int design_bottom_sheet = 2131493055;
+			// aapt resource value: 0x7f0c00b7
+			public const int design_menu_item_action_area = 2131493047;
 			
-			// aapt resource value: 0x7f0c00c4
-			public const int design_menu_item_action_area = 2131493060;
+			// aapt resource value: 0x7f0c00b6
+			public const int design_menu_item_action_area_stub = 2131493046;
 			
-			// aapt resource value: 0x7f0c00c3
-			public const int design_menu_item_action_area_stub = 2131493059;
+			// aapt resource value: 0x7f0c00b5
+			public const int design_menu_item_text = 2131493045;
 			
-			// aapt resource value: 0x7f0c00c2
-			public const int design_menu_item_text = 2131493058;
-			
-			// aapt resource value: 0x7f0c00c1
-			public const int design_navigation_view = 2131493057;
+			// aapt resource value: 0x7f0c00b4
+			public const int design_navigation_view = 2131493044;
 			
 			// aapt resource value: 0x7f0c0030
 			public const int disableHome = 2131492912;
@@ -3367,8 +3361,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c003f
 			public const int end = 2131492927;
 			
-			// aapt resource value: 0x7f0c00d8
-			public const int end_padder = 2131493080;
+			// aapt resource value: 0x7f0c00cb
+			public const int end_padder = 2131493067;
 			
 			// aapt resource value: 0x7f0c004e
 			public const int enterAlways = 2131492942;
@@ -3412,18 +3406,6 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0088
 			public const int group_divider = 2131493000;
 			
-			// aapt resource value: 0x7f0c00b4
-			public const int hmax_layout = 2131493044;
-			
-			// aapt resource value: 0x7f0c00b9
-			public const int hmax_seekBar = 2131493049;
-			
-			// aapt resource value: 0x7f0c00b8
-			public const int hmax_text = 2131493048;
-			
-			// aapt resource value: 0x7f0c00ae
-			public const int hmin_layout = 2131493038;
-			
 			// aapt resource value: 0x7f0c0005
 			public const int home = 2131492869;
 			
@@ -3433,8 +3415,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0078
 			public const int icon = 2131492984;
 			
-			// aapt resource value: 0x7f0c00d7
-			public const int icon_group = 2131493079;
+			// aapt resource value: 0x7f0c00ca
+			public const int icon_group = 2131493066;
 			
 			// aapt resource value: 0x7f0c0027
 			public const int icon_only = 2131492903;
@@ -3445,11 +3427,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0075
 			public const int image = 2131492981;
 			
-			// aapt resource value: 0x7f0c00ab
-			public const int image_view = 2131493035;
-			
-			// aapt resource value: 0x7f0c00d3
-			public const int info = 2131493075;
+			// aapt resource value: 0x7f0c00c6
+			public const int info = 2131493062;
 			
 			// aapt resource value: 0x7f0c006f
 			public const int italic = 2131492975;
@@ -3460,8 +3439,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0055
 			public const int labeled = 2131492949;
 			
-			// aapt resource value: 0x7f0c00bb
-			public const int largeLabel = 2131493051;
+			// aapt resource value: 0x7f0c00ae
+			public const int largeLabel = 2131493038;
 			
 			// aapt resource value: 0x7f0c005b
 			public const int left = 2131492955;
@@ -3481,17 +3460,17 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0077
 			public const int list_item = 2131492983;
 			
-			// aapt resource value: 0x7f0c00da
-			public const int masked = 2131493082;
+			// aapt resource value: 0x7f0c00cd
+			public const int masked = 2131493069;
 			
-			// aapt resource value: 0x7f0c00cc
-			public const int media_actions = 2131493068;
+			// aapt resource value: 0x7f0c00bf
+			public const int media_actions = 2131493055;
 			
-			// aapt resource value: 0x7f0c00db
-			public const int menu_client = 2131493083;
+			// aapt resource value: 0x7f0c00ce
+			public const int menu_client = 2131493070;
 			
-			// aapt resource value: 0x7f0c00dc
-			public const int menu_server = 2131493084;
+			// aapt resource value: 0x7f0c00cf
+			public const int menu_server = 2131493071;
 			
 			// aapt resource value: 0x7f0c00a3
 			public const int message = 2131493027;
@@ -3511,8 +3490,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0037
 			public const int multiply = 2131492919;
 			
-			// aapt resource value: 0x7f0c00c0
-			public const int navigation_header_container = 2131493056;
+			// aapt resource value: 0x7f0c00b3
+			public const int navigation_header_container = 2131493043;
 			
 			// aapt resource value: 0x7f0c004a
 			public const int never = 2131492938;
@@ -3523,14 +3502,14 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c002e
 			public const int normal = 2131492910;
 			
-			// aapt resource value: 0x7f0c00d5
-			public const int notification_background = 2131493077;
+			// aapt resource value: 0x7f0c00c8
+			public const int notification_background = 2131493064;
 			
-			// aapt resource value: 0x7f0c00cf
-			public const int notification_main_column = 2131493071;
+			// aapt resource value: 0x7f0c00c2
+			public const int notification_main_column = 2131493058;
 			
-			// aapt resource value: 0x7f0c00ce
-			public const int notification_main_column_container = 2131493070;
+			// aapt resource value: 0x7f0c00c1
+			public const int notification_main_column_container = 2131493057;
 			
 			// aapt resource value: 0x7f0c0067
 			public const int outline = 2131492967;
@@ -3565,11 +3544,11 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c005c
 			public const int right = 2131492956;
 			
-			// aapt resource value: 0x7f0c00d4
-			public const int right_icon = 2131493076;
+			// aapt resource value: 0x7f0c00c7
+			public const int right_icon = 2131493063;
 			
-			// aapt resource value: 0x7f0c00d0
-			public const int right_side = 2131493072;
+			// aapt resource value: 0x7f0c00c3
+			public const int right_side = 2131493059;
 			
 			// aapt resource value: 0x7f0c000c
 			public const int save_image_matrix = 2131492876;
@@ -3634,8 +3613,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0056
 			public const int selected = 2131492950;
 			
-			// aapt resource value: 0x7f0c00b7
-			public const int service_text = 2131493047;
+			// aapt resource value: 0x7f0c00ac
+			public const int service_text = 2131493036;
 			
 			// aapt resource value: 0x7f0c008a
 			public const int shortcut = 2131493002;
@@ -3649,17 +3628,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0034
 			public const int showTitle = 2131492916;
 			
-			// aapt resource value: 0x7f0c00ba
-			public const int smallLabel = 2131493050;
-			
-			// aapt resource value: 0x7f0c00b1
-			public const int smax_layout = 2131493041;
-			
-			// aapt resource value: 0x7f0c00b6
-			public const int smax_seekBar = 2131493046;
-			
-			// aapt resource value: 0x7f0c00b5
-			public const int smax_text = 2131493045;
+			// aapt resource value: 0x7f0c00ad
+			public const int smallLabel = 2131493037;
 			
 			// aapt resource value: 0x7f0c0016
 			public const int snackbar_action = 2131492886;
@@ -3694,8 +3664,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c005d
 			public const int start = 2131492957;
 			
-			// aapt resource value: 0x7f0c00cb
-			public const int status_bar_latest_event_content = 2131493067;
+			// aapt resource value: 0x7f0c00be
+			public const int status_bar_latest_event_content = 2131493054;
 			
 			// aapt resource value: 0x7f0c0062
 			public const int stretch = 2131492962;
@@ -3736,8 +3706,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0061
 			public const int textStart = 2131492961;
 			
-			// aapt resource value: 0x7f0c00c5
-			public const int text_input_password_toggle = 2131493061;
+			// aapt resource value: 0x7f0c00b8
+			public const int text_input_password_toggle = 2131493048;
 			
 			// aapt resource value: 0x7f0c00a5
 			public const int text_view = 2131493029;
@@ -3751,8 +3721,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c001a
 			public const int textinput_helper_text = 2131492890;
 			
-			// aapt resource value: 0x7f0c00d1
-			public const int time = 2131493073;
+			// aapt resource value: 0x7f0c00c4
+			public const int time = 2131493060;
 			
 			// aapt resource value: 0x7f0c0023
 			public const int title = 2131492899;
@@ -3772,8 +3742,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c0084
 			public const int topPanel = 2131492996;
 			
-			// aapt resource value: 0x7f0c00be
-			public const int touch_outside = 2131493054;
+			// aapt resource value: 0x7f0c00b1
+			public const int touch_outside = 2131493041;
 			
 			// aapt resource value: 0x7f0c000f
 			public const int transition_current_scene = 2131492879;
@@ -3805,20 +3775,11 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f0c001b
 			public const int view_offset_helper = 2131492891;
 			
-			// aapt resource value: 0x7f0c00d9
-			public const int visible = 2131493081;
+			// aapt resource value: 0x7f0c00cc
+			public const int visible = 2131493068;
 			
-			// aapt resource value: 0x7f0c00ac
-			public const int vision_view = 2131493036;
-			
-			// aapt resource value: 0x7f0c00ad
-			public const int vmax_layout = 2131493037;
-			
-			// aapt resource value: 0x7f0c00b3
-			public const int vmax_seekBar = 2131493043;
-			
-			// aapt resource value: 0x7f0c00b2
-			public const int vmax_text = 2131493042;
+			// aapt resource value: 0x7f0c00aa
+			public const int vision_view = 2131493034;
 			
 			// aapt resource value: 0x7f0c0029
 			public const int wide = 2131492905;

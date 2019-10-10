@@ -66,32 +66,6 @@
     android:layout_marginLeft="5dp"
 	   />
 
-	<Button
-	android:id="@+id/delim_button"
-	android:layout_alignParentLeft="true"
-	android:visibility="invisible"
-	android:layout_width="wrap_content"
-	android:layout_height="wrap_content"
-	android:paddingLeft="4dp"
-	android:paddingRight="4dp"
-    android:layout_below="@+id/flash_button"
-	android:background="@color/colorPrimary"
-	android:textColor="@android:color/white"
-    android:layout_marginTop="20dp"
-    android:layout_marginLeft="5dp"
-	   />
-
-  <ImageView
-    android:id="@+id/image_view"
-    android:layout_width="150dp"
-    android:layout_height="150dp"
-    android:layout_marginTop="5dp"
-    android:layout_marginLeft="5dp"
-    android:background="@android:color/holo_orange_light"
-    android:layout_below="@+id/toolbar"
-    android:visibility="invisible"
-  />
-
 	  <ImageView
     android:id="@+id/vision_view"
     android:layout_width="150dp"
@@ -104,125 +78,17 @@
     android:visibility="visible"
   />
 
-    <LinearLayout android:orientation="horizontal"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:layout_above="@+id/vmax_layout"
-          android:id="@+id/hmin_layout"
-         android:layout_marginBottom="10dp">
-
-        <TextView
-    android:id="@+id/around_text"
+	  <TextView
+    android:paddingLeft="5dp"
+    android:id="@+id/debug_view"
     android:textSize="16sp"
-    android:shadowColor="#000000"
-    android:shadowDx="1.5"
-    android:shadowDy="1.3"
-    android:shadowRadius="1.6"
-    android:layout_marginLeft="10dp"
-    android:text="Around"
+	tools:text="test"
     android:textColor="@android:color/holo_orange_light"
+	android:layout_centerHorizontal="true"
+   android:layout_above="@+id/service_text"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
   />
-
-         <SeekBar
-        android:id="@+id/around_seekBar"
-        android:max="100"
-        android:progress="0"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-        </LinearLayout>
-
-    <LinearLayout android:orientation="horizontal"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:layout_above="@+id/smax_layout"
-          android:id="@+id/vmax_layout"
-		 android:layout_marginBottom="10dp">
-
-        <TextView
-    android:id="@+id/vmax_text"
-    android:textSize="16sp"
-    android:shadowColor="#000000"
-    android:shadowDx="1.5"
-    android:shadowDy="1.3"
-    android:shadowRadius="1.6"
-    android:layout_marginLeft="10dp"
-    android:text="Vmax"
-    android:textColor="@android:color/holo_orange_light"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-  />
-
-         <SeekBar
-        android:id="@+id/vmax_seekBar"
-        android:max="100"
-        android:progress="0"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-        </LinearLayout>
-
-    <LinearLayout android:orientation="horizontal"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:layout_above="@+id/hmax_layout"
-          android:id="@+id/smax_layout"
-		 android:layout_marginBottom="10dp">
-
-        <TextView
-    android:id="@+id/smax_text"
-    android:textSize="16sp"
-    android:shadowColor="#000000"
-    android:shadowDx="1.5"
-    android:shadowDy="1.3"
-    android:shadowRadius="1.6"
-    android:layout_marginLeft="10dp"
-    android:text="Smax"
-    android:textColor="@android:color/holo_orange_light"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-  />
-
-         <SeekBar
-        android:id="@+id/smax_seekBar"
-        android:max="100"
-        android:progress="0"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-        </LinearLayout>
-
-		<LinearLayout
-		  android:id="@+id/hmax_layout"
-		android:orientation="horizontal"
-		  android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-		 android:layout_marginBottom="10dp"
-			 android:layout_above="@+id/service_text">
-
-		<TextView
-    android:id="@+id/hmax_text"
-    android:textSize="16sp"
-	android:shadowColor="#000000"
-    android:shadowDx="1.5"
-    android:shadowDy="1.3"
-    android:shadowRadius="1.6"
-	android:layout_marginLeft="10dp"
-	android:text="Hmax"
-    android:textColor="@android:color/holo_orange_light"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"  />
-
-		 <SeekBar
-        android:id="@+id/hmax_seekBar"
-        android:max="100"
-        android:progress="0"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-		</LinearLayout>
 
 	<TextView
     android:paddingBottom="15dp"

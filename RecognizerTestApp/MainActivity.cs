@@ -1,39 +1,35 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Android;
 using Android.App;
-using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
-using Android.Hardware;
 using Android.OS;
 using Android.Support.V4.App;
 using Android.Support.V4.Content;
 using Android.Support.V7.App;
+using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Recognizer.Core.Resources.Strings;
 using RecognizerTestApp.Services;
 using RecognizerTestApp.Settings;
 using Camera = Android.Hardware.Camera;
-using Exception = System.Exception;
-using Math = System.Math;
-using Size = Android.Util.Size;
+using Environment = System.Environment;
 using Toolbar = Android.Support.V7.Widget.Toolbar;
 
 namespace RecognizerTestApp
 {
     [Activity(Label = "@string/app_name", MainLauncher = true)]
-    public class MainActivity : AppCompatActivity, TextureView.ISurfaceTextureListener, SeekBar.IOnSeekBarChangeListener
+    public class MainActivity : AppCompatActivity, TextureView.ISurfaceTextureListener
     {
         private const int REQUEST_CAMERA_ID = 1001;
         private const int REQUEST_INTERNET_ID = 1002;
         private const int REQUEST_FLASH_ID = 1003;
 
         private static readonly string TAG = "Recognizer";
+
         // Max preview width that is guaranteed by Camera2 API
         private static readonly int MAX_PREVIEW_WIDTH = 1920;
 
@@ -41,22 +37,28 @@ namespace RecognizerTestApp
         private static readonly int MAX_PREVIEW_HEIGHT = 1080;
 
         private Camera _camera;
+        private TextView _debugText;
+        private Button _flashButton;
+
+        private bool _flashOn;
 
         private OverlayView _overlayView;
         private Camera.Size _previewSize;
-        private bool _rightCheckInProgress;
+        private Size _realSurfaceSize = new Size(0, 0);
 
         private RecognizerService _recognizerService;
+        private Button _rerunButton;
+        private bool _rightCheckInProgress;
+
+        private Bitmap _searchBitmap;
+        private TextView _serviceText;
+        private SurfaceTexture _surface;
 
         private TextureView _textureView;
         private TextView _textView;
         private Toolbar _toolbar;
-        private ImageView _imageView;
-        private Button _rerunButton;
-        private SurfaceTexture _surface;
-        private Size _realSurfaceSize = new Size(0,0);
-        private TextView _serviceText;
-        private Button _flashButton;
+
+        private ImageView _visionView;
 
         public void OnSurfaceTextureAvailable(SurfaceTexture surface, int width, int height)
         {
@@ -71,37 +73,63 @@ namespace RecognizerTestApp
             CheckRights();
         }
 
+        public bool OnSurfaceTextureDestroyed(SurfaceTexture surface)
+        {
+            _camera.StopPreview();
+            _camera.Release();
+
+            return true;
+        }
+
+        public void OnSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height)
+        {
+            // camera takes care of this
+        }
+
+        public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
+        {
+            if (_recognizerService.GetRecognizingActor() == RecognizingActor.Server &&
+                !_recognizerService.CanBeRecognizedFromServer())
+                return;
+
+            var rect = _overlayView.Rect;
+
+            if (rect == null)
+            {
+                return;
+            }
+
+            if (_recognizerService.IsInitialized && !_recognizerService.SearchComplete &&
+                !_recognizerService.RecognizingTextInProgress)
+            {
+                _recognizerService.RecognizingTextInProgress = true;
+
+                await Task.Factory.StartNew(RecognizeText);
+            }
+        }
+
         private void SetTextureViewSize()
         {
             var previewWidth = _previewSize.Height;
             var previewHeight = _previewSize.Width;
 
-            double wh = (double)previewWidth / previewHeight;
-            double hw = (double)previewHeight / previewWidth;
+            var wh = (double) previewWidth / previewHeight;
+            var hw = (double) previewHeight / previewWidth;
 
             if (previewHeight < _textureView.Height && previewWidth < _textureView.Width)
             {
-                if ((previewHeight / _textureView.Height) >= (previewWidth / _textureView.Width))
-                {
-                    _realSurfaceSize = new Size((int)(_textureView.Height / hw), _textureView.Height);
-                }
+                if (previewHeight / _textureView.Height >= previewWidth / _textureView.Width)
+                    _realSurfaceSize = new Size((int) (_textureView.Height / hw), _textureView.Height);
                 else
-                {
-                    _realSurfaceSize = new Size(_textureView.Width, (int)(_textureView.Width / wh));
-                }
+                    _realSurfaceSize = new Size(_textureView.Width, (int) (_textureView.Width / wh));
             }
             else
             {
-                if (( _textureView.Height / previewHeight) >= (_textureView.Width / previewWidth))
-                {
-                    _realSurfaceSize = new Size((int)(_textureView.Height / hw), _textureView.Height);
-                }
+                if (_textureView.Height / previewHeight >= _textureView.Width / previewWidth)
+                    _realSurfaceSize = new Size((int) (_textureView.Height / hw), _textureView.Height);
                 else
-                {
-                    _realSurfaceSize = new Size(_textureView.Width, (int)(_textureView.Width / wh));
-                }
+                    _realSurfaceSize = new Size(_textureView.Width, (int) (_textureView.Width / wh));
             }
-
         }
 
         private async Task MainInit(SurfaceTexture surface)
@@ -140,55 +168,22 @@ namespace RecognizerTestApp
             var w = _textureView.Height;
             var h = _textureView.Width;
 
-            _overlayView.Rect = new Rect((w / 2) - (size / 2),
-                (h / 2) - (size / 2),
-                (w / 2) + (size / 2),
-                (h / 2) + (size / 2));
+            _overlayView.Rect = new Rect(w / 2 - size / 2,
+                h / 2 - size / 2,
+                w / 2 + size / 2,
+                h / 2 + size / 2);
 
             if (_searchBitmap == null)
-            {
                 _searchBitmap = Bitmap.CreateBitmap(_realSurfaceSize.Height,
                     _realSurfaceSize.Width, Bitmap.Config.Argb8888);
-            }
 
             await _recognizerService.Init(ApplicationContext,
                 _overlayView.Rect);
 
-            //_recognizerService.OverlayRectUpdated += RecognizerServiceOverlayRectUpdated;
-            _recognizerService.CroppedImageUpdated += RecognizerServiceCroppedImageUpdated;
             _recognizerService.VisionImageUpdated += RecognizerServiceVisionImageUpdated;
             _recognizerService.RecordWasFound += RecognizerServiceRecordWasFound;
-            _recognizerService.SomeIncorrectTextWasFound += RecognizerServiceSomeIncorrectTextWasFound;
-            _recognizerService.NoTextWasFound += RecognizerServiceNoTextWasFound; 
         }
 
-        private void RecognizerServiceNoTextWasFound(object sender, EventArgs e)
-        {
-            try
-            {
-                RunOnUiThread(() => { _serviceText.Text = CommonResources.place_cursor_on_text; });
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception);
-            }
-        }
-
-        private void RecognizerServiceSomeIncorrectTextWasFound(object sender, EventArgs e)
-        {
-            try
-            {
-                RunOnUiThread(() =>
-                {
-                    Toast.MakeText(this, CommonResources.some_wrong_text_found, ToastLength.Short).Show();
-                    _serviceText.Text = string.Empty;
-                });
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception);
-            }
-        }
 
         private void RecognizerServiceRecordWasFound(object sender, RecognitionResult result)
         {
@@ -197,10 +192,8 @@ namespace RecognizerTestApp
                 RunOnUiThread(() =>
                 {
                     _rerunButton.Visibility = ViewStates.Visible;
-                    //_overlayView.Rect = new Rect();
-                    //_overlayView.ForceLayout();
-                    
-                    _textView.Text = "Quality=" + result.Quality + System.Environment.NewLine + result.ResultText;
+
+                    _textView.Text = "Quality=" + result.Quality + Environment.NewLine + result.ResultText;
                     _serviceText.Text = string.Empty;
                 });
             }
@@ -210,56 +203,10 @@ namespace RecognizerTestApp
             }
         }
 
-        private void RecognizerServiceCroppedImageUpdated(object sender, Bitmap bitmap)
-        {
-            RunOnUiThread(() => _imageView.SetImageBitmap(bitmap));
-        }
-
         private void RecognizerServiceVisionImageUpdated(object sender, Bitmap bitmap)
         {
             RunOnUiThread(() => _visionView.SetImageBitmap(bitmap));
         }
-
-        public bool OnSurfaceTextureDestroyed(SurfaceTexture surface)
-        {
-            _camera.StopPreview();
-            _camera.Release();
-
-            return true;
-        }
-
-        public void OnSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height)
-        {
-            // camera takes care of this
-        }
-
-        public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
-        {
-            if (_recognizerService.GetRecognizingActor() == RecognizingActor.Server &&
-                !_recognizerService.CanBeRecognizedFromServer())
-            {
-                return;
-            }
-
-            var rect = _overlayView.Rect;
-
-            if (rect == null)
-            {
-                return;
-            }
-
-            //var bitmap = Bitmap.CreateBitmap(_searchBitmap, rect.Left, rect.Top, rect.Width(), rect.Height());
-    
-
-            if (_recognizerService.IsInitialized && !_recognizerService.SearchComplete && !_recognizerService.RecognizingTextInProgress)
-            {
-                _recognizerService.RecognizingTextInProgress = true;
-
-                await Task.Factory.StartNew(RecognizeText);
-            }
-        }
-
-        private Bitmap _searchBitmap;
 
         private async Task RecognizeText()
         {
@@ -275,15 +222,16 @@ namespace RecognizerTestApp
                 {
                     matrix.PostRotate(90);
 
-                    bitmap = Bitmap.CreateBitmap(_searchBitmap, rect.Left, rect.Top, rect.Width(), rect.Height(),matrix, false);
+                    bitmap = Bitmap.CreateBitmap(_searchBitmap, rect.Left, rect.Top, rect.Width(), rect.Height(),
+                        matrix, false);
                 }
+                var result = await _recognizerService.RecognizeText(bitmap);
 
-
-                RecognitionResult result = await _recognizerService.RecognizeText(bitmap);
+                _recognizerService.RecognizingTextInProgress = false;
 
                 // _textView.Text = $"{CommonResources.common_quality}: {result.Quality}%";
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e);
             }
@@ -316,13 +264,9 @@ namespace RecognizerTestApp
                     _recognizerService.SetRecognizingActor(RecognizingActor.Server);
 
                     if (_recognizerService.CanBeRecognizedFromServer())
-                    {
                         Toast.MakeText(this, CommonResources.on_server, ToastLength.Short).Show();
-                    }
                     else
-                    {
                         Toast.MakeText(this, CommonResources.cant_be_recognized_from_server, ToastLength.Long).Show();
-                    }
                     break;
             }
 
@@ -346,81 +290,21 @@ namespace RecognizerTestApp
 
             SetContentView(Resource.Layout.activity_main);
 
-            if (GeneralSettings.ShowCroppedImage)
-            {
-                _imageView = FindViewById<ImageView>(Resource.Id.image_view);
-                _imageView.Visibility = ViewStates.Visible;
-            }
-
             if (GeneralSettings.ShowVisionImage)
             {
                 _visionView = FindViewById<ImageView>(Resource.Id.vision_view);
                 _visionView.Visibility = ViewStates.Visible;
             }
 
-            _flashButton = FindViewById<Button>(Resource.Id.flash_button);  
+            _flashButton = FindViewById<Button>(Resource.Id.flash_button);
             _serviceText = FindViewById<TextView>(Resource.Id.service_text);
+            _debugText = FindViewById<TextView>(Resource.Id.debug_view);
             _textView = FindViewById<TextView>(Resource.Id.text_view);
             _rerunButton = FindViewById<Button>(Resource.Id.rerun_button);
-            _delimButton = FindViewById<Button>(Resource.Id.delim_button);
 
-
-            _hmaxTextView = FindViewById<TextView>(Resource.Id.hmax_text);
-            _smaxTextView = FindViewById<TextView>(Resource.Id.smax_text);
-            _vmaxTextView = FindViewById<TextView>(Resource.Id.vmax_text);
-            _aroundTextView = FindViewById<TextView>(Resource.Id.around_text);
-
-            _hmaxSeekBar = FindViewById<SeekBar>(Resource.Id.hmax_seekBar);
-            _hmaxSeekBar.SetOnSeekBarChangeListener(this);
-
-            _smaxSeekBar = FindViewById<SeekBar>(Resource.Id.smax_seekBar);
-            _smaxSeekBar.SetOnSeekBarChangeListener(this);
-
-            _vmaxSeekBar = FindViewById<SeekBar>(Resource.Id.vmax_seekBar);
-            _vmaxSeekBar.SetOnSeekBarChangeListener(this);
-
-            _aroundSeekBar = FindViewById<SeekBar>(Resource.Id.around_seekBar);
-            _aroundSeekBar.SetOnSeekBarChangeListener(this);
-
-            _aroundSeekBar.Progress = 70;
-            _hmaxSeekBar.Progress = 53;
-            _smaxSeekBar.Progress = 49;
-            _vmaxSeekBar.Progress = 50;
-
-            if (GeneralSettings.UseDebugFeatures)
-            {
-                _hmaxSeekBar.Visibility = ViewStates.Visible;
-                _smaxSeekBar.Visibility = ViewStates.Visible;
-                _vmaxSeekBar.Visibility = ViewStates.Visible;
-                _aroundSeekBar.Visibility = ViewStates.Visible;
-            }
-            else
-            {
-                _hmaxSeekBar.Visibility = ViewStates.Gone;
-                _smaxSeekBar.Visibility = ViewStates.Gone;
-                _vmaxSeekBar.Visibility = ViewStates.Gone;
-                _aroundSeekBar.Visibility = ViewStates.Gone;
-            }
-
-            if (GeneralSettings.UseSearchBoxDelimeter)
-            {
-                _delimButton.Visibility = ViewStates.Visible;
-                _delimButton.Text = _recognizerService.SearchBoxDelimiter.ToString();
-            }
+            _debugText.Visibility = GeneralSettings.UseDebugFeatures ? ViewStates.Visible : ViewStates.Gone;
 
             _serviceText.Text = CommonResources.place_cursor_on_text;
-
-            _delimButton.Click += (obj, e) =>
-            {
-                _recognizerService.SearchBoxDelimiter++;
-                if (_recognizerService.SearchBoxDelimiter > 4)
-                {
-                    _recognizerService.SearchBoxDelimiter = 1;
-                }
-
-                _delimButton.Text = _recognizerService.SearchBoxDelimiter.ToString();
-                Toast.MakeText(this, $"delim={_recognizerService.SearchBoxDelimiter}", ToastLength.Long).Show();
-            };
 
             _rerunButton.Text = CommonResources.rerun;
             _rerunButton.Click += (obj, e) =>
@@ -443,27 +327,7 @@ namespace RecognizerTestApp
             _overlayView.BringToFront();
 
             _textureView.SurfaceTextureListener = this;
-
-            if (!GeneralSettings.UseDebugFeatures)
-            {
-                _toolbar.Visibility = ViewStates.Gone;
-                _delimButton.Visibility = ViewStates.Gone;
-            }
         }
-
-        private bool _flashOn;
-        private Button _delimButton;
-        private SeekBar _hmaxSeekBar;
-        private SeekBar _smaxSeekBar;
-        private SeekBar _vmaxSeekBar;
-        private SeekBar _aroundSeekBar;
-
-        private TextView _aroundTextView;
-        private TextView _smaxTextView;
-        private TextView _vmaxTextView;
-        private TextView _hmaxTextView;
-
-        private ImageView _visionView;
 
         private void ToggleFlash()
         {
@@ -473,9 +337,8 @@ namespace RecognizerTestApp
             {
                 var param = _camera.GetParameters();
 
-            param.FlashMode = _flashOn ? Camera.Parameters.FlashModeTorch : Camera.Parameters.FlashModeOff;
-            _camera.SetParameters(param);
-
+                param.FlashMode = _flashOn ? Camera.Parameters.FlashModeTorch : Camera.Parameters.FlashModeOff;
+                _camera.SetParameters(param);
             }
             catch (Exception e)
             {
@@ -498,7 +361,7 @@ namespace RecognizerTestApp
             if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.Camera) != Permission.Granted)
             {
                 _rightCheckInProgress = true;
-                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.Camera },
+                ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Camera},
                     REQUEST_CAMERA_ID);
                 return;
             }
@@ -507,7 +370,7 @@ namespace RecognizerTestApp
                 Permission.Granted)
             {
                 _rightCheckInProgress = true;
-                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.Internet },
+                ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Internet},
                     REQUEST_INTERNET_ID);
                 return;
             }
@@ -516,7 +379,7 @@ namespace RecognizerTestApp
                 Permission.Granted)
             {
                 _rightCheckInProgress = true;
-                ActivityCompat.RequestPermissions(this, new[] { Manifest.Permission.Flashlight },
+                ActivityCompat.RequestPermissions(this, new[] {Manifest.Permission.Flashlight},
                     REQUEST_FLASH_ID);
                 return;
             }
@@ -524,7 +387,8 @@ namespace RecognizerTestApp
             MainInit(_surface);
         }
 
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions,
+            Permission[] grantResults)
         {
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             switch (requestCode)
@@ -533,72 +397,34 @@ namespace RecognizerTestApp
                     if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
                     {
                         ErrorDialog.NewInstance(CommonResources.camera_request_permission)
-                            .Show(this.FragmentManager, "dialog");
-                        this.FinishAffinity();
+                            .Show(FragmentManager, "dialog");
+                        FinishAffinity();
                     }
+
                     break;
 
                 case REQUEST_INTERNET_ID:
                     if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
                     {
                         ErrorDialog.NewInstance(CommonResources.internet_request_permission)
-                            .Show(this.FragmentManager, "dialog");
-                        this.FinishAffinity();
+                            .Show(FragmentManager, "dialog");
+                        FinishAffinity();
                     }
+
                     break;
 
                 case REQUEST_FLASH_ID:
                     if (permissions.Length == 0 || grantResults.Any(t => t != Permission.Granted))
                     {
                         ErrorDialog.NewInstance(CommonResources.flash_request_permission)
-                            .Show(this.FragmentManager, "dialog");
-                        this.FinishAffinity();
+                            .Show(FragmentManager, "dialog");
+                        FinishAffinity();
                     }
+
                     break;
             }
 
             CheckRights();
-
-        }
-
-        private void RecognizerServiceOverlayRectUpdated(object sender, Rect rect)
-        {
-            _overlayView.Rect = rect;
-        }
-
-        public void OnProgressChanged(SeekBar seekBar, int progress, bool fromUser)
-        {
-            float around = ((float) _aroundSeekBar.Progress) / 100f;
-
-            float h_m = 30;
-            float sv_m = 10;
-
-            float h = 360f * ((float) _hmaxSeekBar.Progress / 100f);
-            _recognizerService.HMin = h - (around * h_m) >= 0 ? h - (around * h_m) : 0;
-            _recognizerService.HMax = h + (around * h_m) <= 360 ? h + (around * h_m) : 360;
-
-            float s = _smaxSeekBar.Progress;
-            _recognizerService.SMin = (s - (around * sv_m) >= 0 ? s - (around * sv_m) : 0)/100f;
-            _recognizerService.SMax = (s + (around * sv_m) <= 100 ? s + (around * sv_m) : 100)/100f;
-
-            float v = _vmaxSeekBar.Progress;
-            _recognizerService.VMin = (v - (around * sv_m) >= 0 ? v - (around * sv_m) : 0)/100f;
-            _recognizerService.VMax = (v + (around * sv_m) <= 100 ? v + (around * sv_m) : 100)/100f;
-
-            _aroundTextView.Text = "Around:" + around;
-            _hmaxTextView.Text = "H:" + h.ToString(CultureInfo.InvariantCulture);
-            _smaxTextView.Text = "S:" + s.ToString(CultureInfo.InvariantCulture);
-            _vmaxTextView.Text = "V:" + v.ToString(CultureInfo.InvariantCulture);
-        }
-
-        public void OnStartTrackingTouch(SeekBar seekBar)
-        {
-            //throw new NotImplementedException();
-        }
-
-        public void OnStopTrackingTouch(SeekBar seekBar)
-        {
-            //throw new NotImplementedException();
         }
     }
 }
