@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Android.Content;
 using Android.Graphics;
@@ -47,7 +47,8 @@ namespace RecognizerTestApp.Services
 
         private Bitmap _visionBitmap;
 
-        public float CurrentContrast = 0.9f;
+        public float CurrentContrast = 0.99f;
+        private int[] _currentBitmapPixelArray;
 
         public volatile bool IsInitialized;
 
@@ -103,6 +104,7 @@ namespace RecognizerTestApp.Services
             _textureRect = rect ?? throw new ArgumentNullException(nameof(rect));
 
             _bitmapPixelArray = new int[rect.Width() * rect.Height()];
+            _currentBitmapPixelArray = new int[_textureRect.Width() * _textureRect.Height()];
 
             InitFirebase();
             await InitTesseract();
@@ -162,50 +164,102 @@ namespace RecognizerTestApp.Services
             _finalRecognitionResult.BoundingBox = new Rect(_tempRecognitionResult.BoundingBox);
         }
 
-        private void GetVisionBitmap()
+        public static void RGBToHSL(int red, int green, int blue, float[] hsl)
         {
-            var timer = Stopwatch.StartNew();
+            float r = (red / 255f);
+            float g = (green / 255f);
+            float b = (blue / 255f);
 
-            _visionBitmap = _textureViewBitmap;
+            float min = Math.Min(Math.Min(r, g), b);
+            float max = Math.Max(Math.Max(r, g), b);
+            float delta = max - min;
 
-            var currentBitmapPixelArray = new int[_textureRect.Width() * _textureRect.Height()];
-            for (var i = 0; i < currentBitmapPixelArray.Length; i++) currentBitmapPixelArray[i] = Color.White;
+            float h = 0;
+            float s = 0;
+            float l = (float)((max + min) / 2.0f);
 
-            var number_of_color = 0;
-            var hsv = new float[3];
-            for (var j = 0; j < _visionBitmap.Height; j++)
-            for (var i = 0; i < _visionBitmap.Width; i++)
+            if (delta != 0)
             {
-                var pixelColor = _bitmapPixelArray[j * _visionBitmap.Width + i];
+                if (l < 0.5f)
+                {
+                    s = (float)(delta / (max + min));
+                }
+                else
+                {
+                    s = (float)(delta / (2.0f - max - min));
+                }
 
-                //var lume = ColorUtils.CalculateLuminance(pixelColor);
-                //if (lume < 0.10 || lume > 0.6)
-                //{
-                //    _visionBitmap.SetPixel(i, j, Color.White);
-                //    continue;
-                //}
-
-                var red = Color.GetRedComponent(pixelColor);
-                var green = Color.GetGreenComponent(pixelColor);
-                var blue = Color.GetBlueComponent(pixelColor);
-                Color.RGBToHSV(red, green, blue, hsv);
-
-                if (hsv[2] < 0.15 || hsv[2] > 0.90
-                                  // || hsv[1] < 0.2
-                                  || hsv[0] < 180 || hsv[0] > 274)
-                    continue;
-
-                currentBitmapPixelArray[j * _visionBitmap.Width + i] = _bitmapPixelArray[j * _visionBitmap.Width + i];
-                number_of_color++;
+                if (r == max)
+                {
+                    h = (g - b) / delta;
+                }
+                else if (g == max)
+                {
+                    h = 2f + (b - r) / delta;
+                }
+                else if (b == max)
+                {
+                    h = 4f + (r - g) / delta;
+                }
             }
 
-            _visionBitmap.SetPixels(currentBitmapPixelArray, 0, _textureRect.Width(), 0, 0, _textureRect.Width(),
+            h = h * 60f;
+            if (h < 0)
+                h += 360;
+
+            hsl[0] = h;
+            hsl[1] = s;
+            hsl[2] = l;
+        }
+
+        private void GetVisionBitmap()
+        {
+            //var timer = Stopwatch.StartNew(); 
+
+             _visionBitmap = _textureViewBitmap;
+            var h = _visionBitmap.Height;
+            var w = _visionBitmap.Width;
+
+
+            for (var i = 0; i < _currentBitmapPixelArray.Length; i++)
+            {
+                _currentBitmapPixelArray[i] = Color.White;
+            }
+
+            int blackColor = Color.Black.ToArgb();
+            int pixelColor = blackColor;
+            int red = 0;
+            int green = 0;
+            int blue = 0;
+
+            var hsl = new float[3];
+            for (var j = 0; j < h; j++)
+            for (var i = 0; i < w; i++)
+            {
+                pixelColor = _bitmapPixelArray[j * w + i];
+
+                    red = Color.GetRedComponent(pixelColor);
+                    green = Color.GetGreenComponent(pixelColor);
+                    blue = Color.GetBlueComponent(pixelColor);
+
+                RGBToHSL(red,green,blue,hsl);
+
+                    if (hsl[2] < 0.08 || hsl[2] > 0.90
+                                   || hsl[1] < 0.2
+                                  || hsl[0] < 180 || hsl[0] > 274)
+                        continue;
+
+                    //_currentBitmapPixelArray[j * w + i] = blackColor;/*_bitmapPixelArray[j * w + i];*/
+                _currentBitmapPixelArray[j * w + i] = _bitmapPixelArray[j * w + i];
+                }
+            
+            _visionBitmap.SetPixels(_currentBitmapPixelArray, 0, _textureRect.Width(), 0, 0, _textureRect.Width(),
                 _textureRect.Height());
 
             _visionBitmap = BitmapOperator.TurnToGrayScale(_visionBitmap);
             _visionBitmap = BitmapOperator.ChangeBitmapContrastBrightness(_visionBitmap, CurrentContrast, 0);
 
-            timer.Stop();
+            //timer.Stop();
         }
 
         private async Task FirebaseTextRecognizing(Bitmap croppedBitmap)
@@ -239,6 +293,10 @@ namespace RecognizerTestApp.Services
             {
                 if (_tesseractApi != null && _tesseractApi.Initialized)
                 {
+                    var tokenSource = new CancellationTokenSource();
+                    CancellationToken ct = tokenSource.Token;
+
+
                     var success = await _tesseractApi.Recognise(croppedBitmap);
                     var text = success ? _tesseractApi.Text : string.Empty;
 

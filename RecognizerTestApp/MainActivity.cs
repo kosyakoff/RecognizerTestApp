@@ -164,7 +164,7 @@ namespace RecognizerTestApp
                         GravityFlags.CenterVertical | GravityFlags.CenterHorizontal);
             });
 
-            var size = _textureView.Width / 5 > 100 ? _textureView.Width / 5 : 100;
+            var size = _textureView.Width / 3 > 100 ? _textureView.Width / 3 : 100;
             var w = _textureView.Height;
             var h = _textureView.Width;
 
