@@ -25,11 +25,18 @@ namespace RecognizerTestApp.Services
 
         private readonly RecognitionResult _finalRecognitionResult = new RecognitionResult();
 
-        //private readonly string _referenceString =
-        //    "рного тел ется, что и помощи  й можно п т в четыр ли овладе".Replace(" ", "").ToLower();
+        private string _currentReferenceString;
 
-        private readonly string _referenceString =
-            "печатник создал форм шрифтов распечатки обр успешно переж веков, но и пере".Replace(" ", "").ToLower();
+        private string[] _referenceStrings = new[]
+        {
+            "рного тел ется, что и помощи  й можно п т в четыр ли овладе".Replace(" ", "").ToLower(),
+            "печатник создал форм шрифтов распечатки обр успешно переж веков, но и пере".Replace(" ", "").ToLower()
+        };
+
+        private double[][] _referenceHues = {
+            new double[]{180,274}, //blue
+            new double[]{185,195} //violette
+        };
 
         private readonly RecognitionResult _tempRecognitionResult = new RecognitionResult();
         private Context _appContext;
@@ -47,7 +54,7 @@ namespace RecognizerTestApp.Services
 
         private Bitmap _visionBitmap;
 
-        public float CurrentContrast = 0.99f;
+        public float CurrentContrast = 0.9f;
         private int[] _currentBitmapPixelArray;
 
         public volatile bool IsInitialized;
@@ -58,20 +65,14 @@ namespace RecognizerTestApp.Services
         public event EventHandler<Bitmap> VisionImageUpdated;
         public event EventHandler<RecognitionResult> RecordWasFound;
 
-        public void ExportBitmapAsPNG(Bitmap bitmap)
+        public void StartRecognizingText()
         {
-            var sdCardPath = Environment.ExternalStorageDirectory.AbsolutePath;
-            var filePath = Path.Combine(sdCardPath, "test.png");
-            var stream = new FileStream(filePath, FileMode.Create);
-            bitmap.Compress(Bitmap.CompressFormat.Png, 100, stream);
-            stream.Close();
+            RecognizingTextInProgress = true;
         }
 
-        private Bitmap ImportFromFile()
+        public void StopRecognizingText()
         {
-            var sdCardPath = Environment.ExternalStorageDirectory.AbsolutePath;
-            var filePath = Path.Combine(sdCardPath, "render.jpg");
-            return BitmapFactory.DecodeFile(filePath);
+            RecognizingTextInProgress = false;
         }
 
         private void InitFirebase()
@@ -118,13 +119,11 @@ namespace RecognizerTestApp.Services
 
             await _tesseractApi.Init("rus");
 
-            _tesseractApi.SetBlacklist("`~!@#$;%^?&*()-_+=|/<>}{]['…“№*+-¡©´·ˆˇˈˉˊˋˎˏ‘„‚.’—123456789");
+            _tesseractApi.SetBlacklist(":,.123456789`~!@#$;%^?&*()-_+=|/<>}{]['…“№*+-¡©´·ˆˇˈˉˊˋˎˏ‘„‚.’—");
         }
 
         public async Task<RecognitionResult> RecognizeText(Bitmap textureViewBitmap)
         {
-            //Stopwatch timer = Stopwatch.StartNew();
-
             try
             {
                 _textureViewBitmap = textureViewBitmap;
@@ -151,6 +150,10 @@ namespace RecognizerTestApp.Services
             catch (Exception e)
             {
                 Console.WriteLine(e);
+            }
+            finally
+            {
+                RecognizingTextInProgress = false;
             }
 
             return _finalRecognitionResult;
@@ -220,39 +223,46 @@ namespace RecognizerTestApp.Services
             var h = _visionBitmap.Height;
             var w = _visionBitmap.Width;
 
-
             for (var i = 0; i < _currentBitmapPixelArray.Length; i++)
             {
                 _currentBitmapPixelArray[i] = Color.White;
             }
 
-            int blackColor = Color.Black.ToArgb();
-            int pixelColor = blackColor;
+            int pixelColor = Color.White;
             int red = 0;
             int green = 0;
             int blue = 0;
 
             var hsl = new float[3];
             for (var j = 0; j < h; j++)
-            for (var i = 0; i < w; i++)
             {
-                pixelColor = _bitmapPixelArray[j * w + i];
+                for (var i = 0; i < w; i++)
+                {
+                    pixelColor = _bitmapPixelArray[j * w + i];
 
                     red = Color.GetRedComponent(pixelColor);
                     green = Color.GetGreenComponent(pixelColor);
                     blue = Color.GetBlueComponent(pixelColor);
 
-                RGBToHSL(red,green,blue,hsl);
+                    RGBToHSL(red, green, blue, hsl);
 
                     if (hsl[2] < 0.08 || hsl[2] > 0.90
-                                   || hsl[1] < 0.2
-                                  || hsl[0] < 180 || hsl[0] > 274)
+                                      || hsl[1] < 0.2)
+                    {
                         continue;
+                    }
 
-                    //_currentBitmapPixelArray[j * w + i] = blackColor;/*_bitmapPixelArray[j * w + i];*/
-                _currentBitmapPixelArray[j * w + i] = _bitmapPixelArray[j * w + i];
+                    foreach (var referenceHue in _referenceHues)
+                    {
+                        if (hsl[0] >= referenceHue[0] && hsl[0] <= referenceHue[1])
+                        {
+                            _currentBitmapPixelArray[j * w + i] = _bitmapPixelArray[j * w + i];
+                            break;
+                        }
+                    }
                 }
-            
+            }
+
             _visionBitmap.SetPixels(_currentBitmapPixelArray, 0, _textureRect.Width(), 0, 0, _textureRect.Width(),
                 _textureRect.Height());
 
@@ -293,10 +303,6 @@ namespace RecognizerTestApp.Services
             {
                 if (_tesseractApi != null && _tesseractApi.Initialized)
                 {
-                    var tokenSource = new CancellationTokenSource();
-                    CancellationToken ct = tokenSource.Token;
-
-
                     var success = await _tesseractApi.Recognise(croppedBitmap);
                     var text = success ? _tesseractApi.Text : string.Empty;
 
@@ -319,8 +325,17 @@ namespace RecognizerTestApp.Services
 
                 if (text.Length > 0)
                 {
-                    double diff = StringDistance.GetDamerauLevenshteinDistance(_referenceString, text);
-                    quality = (_referenceString.Length - diff) / _referenceString.Length * 100;
+                    foreach (string str in _referenceStrings)
+                    {
+                        double diff = StringDistance.GetDamerauLevenshteinDistance(str, text);
+                        var currQuality = (str.Length - diff) / str.Length * 100;
+
+                        if (currQuality > quality)
+                        {
+                            _currentReferenceString = str;
+                            quality = currQuality;
+                        }
+                    }
                 }
 
                 _tempRecognitionResult.OriginalText = originalText;

@@ -102,8 +102,6 @@ namespace RecognizerTestApp
             if (_recognizerService.IsInitialized && !_recognizerService.SearchComplete &&
                 !_recognizerService.RecognizingTextInProgress)
             {
-                _recognizerService.RecognizingTextInProgress = true;
-
                 await Task.Factory.StartNew(RecognizeText);
             }
         }
@@ -212,6 +210,8 @@ namespace RecognizerTestApp
         {
             try
             {
+                _recognizerService.StartRecognizingText();
+
                 _textureView.GetBitmap(_searchBitmap);
 
                 var rect = _overlayView.Rect;
@@ -227,9 +227,6 @@ namespace RecognizerTestApp
                 }
                 var result = await _recognizerService.RecognizeText(bitmap);
 
-                _recognizerService.RecognizingTextInProgress = false;
-
-                // _textView.Text = $"{CommonResources.common_quality}: {result.Quality}%";
             }
             catch (Exception e)
             {
