@@ -50,7 +50,7 @@ namespace RecognizerTestApp
         private Button _rerunButton;
         private bool _rightCheckInProgress;
 
-        private Bitmap _searchBitmap;
+        private Bitmap _textureViewBitmap;
         private TextView _serviceText;
         private SurfaceTexture _surface;
 
@@ -171,39 +171,11 @@ namespace RecognizerTestApp
                 w / 2 + size / 2,
                 h / 2 + size / 2);
 
-            if (_searchBitmap == null)
-                _searchBitmap = Bitmap.CreateBitmap(_realSurfaceSize.Height,
+            if (_textureViewBitmap == null)
+                _textureViewBitmap = Bitmap.CreateBitmap(_realSurfaceSize.Height,
                     _realSurfaceSize.Width, Bitmap.Config.Argb8888);
 
-            await _recognizerService.Init(ApplicationContext,
-                _overlayView.Rect);
-
-            _recognizerService.VisionImageUpdated += RecognizerServiceVisionImageUpdated;
-            _recognizerService.RecordWasFound += RecognizerServiceRecordWasFound;
-        }
-
-
-        private void RecognizerServiceRecordWasFound(object sender, RecognitionResult result)
-        {
-            try
-            {
-                RunOnUiThread(() =>
-                {
-                    _rerunButton.Visibility = ViewStates.Visible;
-
-                    _textView.Text = "Quality=" + result.Quality + Environment.NewLine + result.ResultText;
-                    _serviceText.Text = string.Empty;
-                });
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }
-
-        private void RecognizerServiceVisionImageUpdated(object sender, Bitmap bitmap)
-        {
-            RunOnUiThread(() => _visionView.SetImageBitmap(bitmap));
+            await _recognizerService.Init(ApplicationContext);
         }
 
         private async Task RecognizeText()
@@ -212,7 +184,7 @@ namespace RecognizerTestApp
             {
                 _recognizerService.StartRecognizingText();
 
-                _textureView.GetBitmap(_searchBitmap);
+                _textureView.GetBitmap(_textureViewBitmap);
 
                 var rect = _overlayView.Rect;
 
@@ -222,10 +194,32 @@ namespace RecognizerTestApp
                 {
                     matrix.PostRotate(90);
 
-                    bitmap = Bitmap.CreateBitmap(_searchBitmap, rect.Left, rect.Top, rect.Width(), rect.Height(),
+                    bitmap = Bitmap.CreateBitmap(_textureViewBitmap, rect.Left, rect.Top, rect.Width(), rect.Height(),
                         matrix, false);
                 }
                 var result = await _recognizerService.RecognizeText(bitmap);
+
+                if (result.Quality >= RecognizerService.RECOGNITION_VALUE)
+                {
+                    RunOnUiThread(() =>
+                    {
+                        _recognizerService.SearchComplete = true;
+                        _rerunButton.Visibility = ViewStates.Visible;
+
+                        _textView.Text = "Quality=" + result.Quality + Environment.NewLine + result.ResultText;
+                        _serviceText.Text = string.Empty;
+                    });
+                }
+
+                if (GeneralSettings.ShowVisionImage)
+                {
+                    RunOnUiThread(() =>
+                    {
+                        _visionView.SetImageBitmap(bitmap);
+                    });
+                }
+
+                _recognizerService.StopRecognizingText();
 
             }
             catch (Exception e)

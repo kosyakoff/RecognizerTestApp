@@ -61,13 +61,11 @@
   <ItemGroup>
     <Compile Include="ErrorDialog.cs" />
     <Compile Include="Helpers\AutoFitTextureView.cs" />
-    <Compile Include="Helpers\BitmapOperator.cs" />
     <Compile Include="Helpers\CompareSizesByArea.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="OverlayView.cs" />
     <Compile Include="ProcessImageListener.cs" />
     <Compile Include="Providers\ReferenceColorProvider.cs" />
-    <Compile Include="RecognitionResult.cs" />
     <Compile Include="RecognizingActor.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -151,6 +149,10 @@
     <Folder Include="Resources\Strings\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Recognizer.Android.Library\Recognizer.Android.Library.csproj">
+      <Project>{75552663-2f86-45fe-8fec-4ba09c89a528}</Project>
+      <Name>Recognizer.Android.Library</Name>
+    </ProjectReference>
     <ProjectReference Include="..\RecognizerCore\Recognizer.Core.csproj">
       <Project>{1e2f07ca-7311-42ab-b0c9-47f1e20a1595}</Project>
       <Name>Recognizer.Core</Name>

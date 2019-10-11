@@ -21,7 +21,8 @@ namespace RecognizerTestApp
     {
 
         private int _statusBarHeight = 0;
-        private Paint _paint;
+        private Paint _strokePaint;
+        private Paint _backgroundPaint;
         private int _strokeWidth;
 
         public OverlayView(Context context, IAttributeSet attrs) :
@@ -39,10 +40,14 @@ namespace RecognizerTestApp
 
         private void Initialize()
         {
-            _paint = new Paint();
-            _paint.SetStyle(Paint.Style.Stroke);
-            _paint.Color = Color.Yellow;
+            _strokePaint = new Paint();
+            _strokePaint.SetStyle(Paint.Style.Stroke);
+            _strokePaint.Color = Color.Yellow;
             _strokeWidth = 10;
+
+            _backgroundPaint = new Paint();
+            _backgroundPaint.SetStyle(Paint.Style.Fill);
+            _backgroundPaint.Color = new Color(128, 128, 128, 128);
         }
 
         public Rect Rect { get; set; }
@@ -57,9 +62,19 @@ namespace RecognizerTestApp
                 if (canvas != null && Rect != null &&
                     !Rect.IsEmpty)
                 {
-                    _paint.StrokeWidth = _strokeWidth;
+                    _strokePaint.StrokeWidth = _strokeWidth;
 
-                    canvas.DrawRect(Rect.Left - _strokeWidth, Rect.Top - _strokeWidth, Rect.Right + _strokeWidth, Rect.Bottom + _strokeWidth, _paint);
+                    //canvas.DrawColor( Rect.Left - _strokeWidth, Rect.Top - _strokeWidth, Rect.Right + _strokeWidth, Rect.Bottom + _strokeWidth, clear);
+
+                    canvas.DrawRect(0,0,this.Width, Rect.Top - _strokeWidth, _backgroundPaint);
+                    canvas.DrawRect(0, Rect.Bottom + _strokeWidth, this.Width, this.Height, _backgroundPaint);
+
+                    canvas.DrawRect(0, Rect.Top - _strokeWidth, Rect.Left - _strokeWidth, Rect.Bottom + _strokeWidth, _backgroundPaint);
+
+                    canvas.DrawRect(Rect.Right + _strokeWidth, Rect.Top - _strokeWidth, this.Width, Rect.Bottom + _strokeWidth, _backgroundPaint);
+
+                    canvas.DrawRect(Rect.Left - _strokeWidth, Rect.Top - _strokeWidth, Rect.Right + _strokeWidth, Rect.Bottom + _strokeWidth, _strokePaint);
+                 
 
                     //_textureView.UnlockCanvasAndPost(canvas);
                 }
