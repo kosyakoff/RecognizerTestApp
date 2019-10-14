@@ -11,7 +11,7 @@ namespace Recognizer.Android.Library
     {
         private const int MAX_TEXT_LENGTH = 160;
 
-        private const float APPLIED_CONTRAST = 0.9f;
+        private const float APPLIED_CONTRAST = 0.99f;
 
         private TesseractApi _tesseractApi;
 
