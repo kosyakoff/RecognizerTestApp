@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Drawing;
 using System.Threading.Tasks;
 using Android.Content;
 using Android.Graphics;
 using RecognizerTestApp.Helpers;
 using Tesseract.Droid;
+using Color = Android.Graphics.Color;
 
 namespace Recognizer.Android.Library
 {
@@ -16,6 +18,8 @@ namespace Recognizer.Android.Library
         private TesseractApi _tesseractApi;
 
         private Context _appContext;
+        private int[] _bitmapPixelArray;
+        private int[] _currentBitmapPixelArray;
 
         public async Task Init(Context context)
         {
@@ -27,7 +31,7 @@ namespace Recognizer.Android.Library
         private async Task InitTesseract()
         {
             _tesseractApi = new TesseractApi(_appContext, AssetsDeployment.OncePerVersion);
-
+            
             await _tesseractApi.Init("rus");
 
             _tesseractApi.SetBlacklist(":,.`~!@#$;%^?&*()-_+=|/<>}{]['…“№*+-¡©´·ˆˇˈˉˊˋˎˏ‘„‚.’—");
@@ -53,20 +57,23 @@ namespace Recognizer.Android.Library
             return string.Empty;
         }
 
-        public async Task<string> RecognizeText(Bitmap bitmap, double[][] textColorHues)
+        public async Task<string> RecognizeText(Bitmap bitmap, double[][] textColorHues, global::Android.Util.Size size)
         {
             var h = bitmap.Height;
             var w = bitmap.Width;
 
-            var bitmapPixelArray = new int[w * h];
-            var currentBitmapPixelArray = new int[w * h];
+            if (_bitmapPixelArray == null || _bitmapPixelArray.Length != w * h)
+            {
+                _bitmapPixelArray = new int[w * h];
+                _currentBitmapPixelArray = new int[w * h];
+            }
 
-            bitmap.GetPixels(bitmapPixelArray, 0, w, 0, 0, w,
+            bitmap.GetPixels(_bitmapPixelArray, 0, w, 0, 0, w,
                 h);
 
-            for (var i = 0; i < currentBitmapPixelArray.Length; i++)
+            for (var i = 0; i < _currentBitmapPixelArray.Length; i++)
             {
-                currentBitmapPixelArray[i] = Color.White;
+                _currentBitmapPixelArray[i] = Color.White;
             }
 
             int pixelColor = Color.White;
@@ -79,7 +86,7 @@ namespace Recognizer.Android.Library
             {
                 for (var i = 0; i < w; i++)
                 {
-                    pixelColor = bitmapPixelArray[j * w + i];
+                    pixelColor = _bitmapPixelArray[j * w + i];
 
                     red = Color.GetRedComponent(pixelColor);
                     green = Color.GetGreenComponent(pixelColor);
@@ -97,14 +104,14 @@ namespace Recognizer.Android.Library
                     {
                         if (hsl[0] >= referenceHue[0] && hsl[0] <= referenceHue[1])
                         {
-                            currentBitmapPixelArray[j * w + i] = bitmapPixelArray[j * w + i];
+                            _currentBitmapPixelArray[j * w + i] = _bitmapPixelArray[j * w + i];
                             break;
                         }
                     }
                 }
             }
 
-            bitmap.SetPixels(currentBitmapPixelArray, 0, w, 0, 0, w,
+            bitmap.SetPixels(_currentBitmapPixelArray, 0, w, 0, 0, w,
                 h);
 
             bitmap = BitmapOperator.TurnToGrayScale(bitmap);

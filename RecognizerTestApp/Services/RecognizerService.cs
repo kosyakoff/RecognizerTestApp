@@ -35,8 +35,7 @@ namespace RecognizerTestApp.Services
         private ProcessImageListener _firebaseProcessImageListener;
         private FirebaseVisionTextRecognizer _firebaseVisionTextDetector;
         private RecognizingActor _recognizingActor;
-
-        private Rect _textureRect;
+        private Android.Util.Size _recognizeAreaSize = new Android.Util.Size(0,0);
 
         private readonly AuCodeLibrary _auCodeLibrary = new AuCodeLibrary();
 
@@ -123,14 +122,14 @@ namespace RecognizerTestApp.Services
             }
         }
 
-        public async Task<RecognitionResult> RecognizeText(Bitmap bitmap)
+        public async Task<RecognitionResult> RecognizeText(Bitmap bitmap, Android.Util.Size size)
         {
             try
             {
                 _recognitionResult.Invalidate();
 
                 // await Task.Factory.StartNew();
-                string text = await _auCodeLibrary.RecognizeText(bitmap, _referenceHues);
+                string text = await _auCodeLibrary.RecognizeText(bitmap, _referenceHues, size);
 
                 SetRecognitionResultFromText(text);
             }

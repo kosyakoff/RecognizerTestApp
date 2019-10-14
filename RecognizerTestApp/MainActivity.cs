@@ -197,7 +197,7 @@ namespace RecognizerTestApp
                     bitmap = Bitmap.CreateBitmap(_textureViewBitmap, rect.Left, rect.Top, rect.Width(), rect.Height(),
                         matrix, false);
                 }
-                var result = await _recognizerService.RecognizeText(bitmap);
+                var result = await _recognizerService.RecognizeText(bitmap, new Size(rect.Width(), rect.Height()));
 
                 if (result.Quality >= RecognizerService.RECOGNITION_VALUE)
                 {
