@@ -74,23 +74,8 @@
     <Compile Include="StringDistance.cs" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="Assets\tessdata\eng.cube.bigrams" />
-    <AndroidAsset Include="Assets\tessdata\eng.cube.fold" />
-    <AndroidAsset Include="Assets\tessdata\eng.cube.lm" />
-    <AndroidAsset Include="Assets\tessdata\eng.cube.nn" />
-    <AndroidAsset Include="Assets\tessdata\eng.cube.params" />
-    <AndroidAsset Include="Assets\tessdata\eng.cube.size" />
-    <AndroidAsset Include="Assets\tessdata\eng.cube.word-freq" />
-    <AndroidAsset Include="Assets\tessdata\eng.tesseract_cube.nn" />
-    <AndroidAsset Include="Assets\tessdata\eng.traineddata" />
-    <AndroidAsset Include="Assets\tessdata\rus.cube.fold" />
-    <AndroidAsset Include="Assets\tessdata\rus.cube.lm" />
-    <AndroidAsset Include="Assets\tessdata\rus.cube.nn" />
-    <AndroidAsset Include="Assets\tessdata\rus.cube.params" />
-    <AndroidAsset Include="Assets\tessdata\rus.cube.size" />
-    <AndroidAsset Include="Assets\tessdata\rus.cube.word-freq" />
-    <AndroidAsset Include="Assets\tessdata\rus.traineddata" />
     <GoogleServicesJson Include="google-services.json" />
+    <AndroidAsset Include="Assets\tessdata\rus.traineddata" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml">
       <SubType>Designer</SubType>
