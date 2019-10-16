@@ -75,6 +75,12 @@
   </ItemGroup>
   <ItemGroup>
     <GoogleServicesJson Include="google-services.json" />
+    <AndroidAsset Include="Assets\tessdata\rus.cube.fold" />
+    <AndroidAsset Include="Assets\tessdata\rus.cube.lm" />
+    <AndroidAsset Include="Assets\tessdata\rus.cube.nn" />
+    <AndroidAsset Include="Assets\tessdata\rus.cube.params" />
+    <AndroidAsset Include="Assets\tessdata\rus.cube.size" />
+    <AndroidAsset Include="Assets\tessdata\rus.cube.word-freq" />
     <AndroidAsset Include="Assets\tessdata\rus.traineddata" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml">
