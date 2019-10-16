@@ -5,16 +5,13 @@ using System.Threading.Tasks;
 using Android.Content;
 using Android.Graphics;
 using Android.Util;
-using Com.Arview.Aurecognizerlibrary;
 using Firebase;
 using Firebase.ML.Vision;
 using Firebase.ML.Vision.Common;
 using Firebase.ML.Vision.Text;
-using Java.Lang;
-using Java.Util;
+using Recognizer.Core;
 using Tesseract.Droid;
 using Console = System.Console;
-//using Recognizer.Android.Library;
 using Exception = System.Exception;
 using File = Java.IO.File;
 
@@ -38,7 +35,7 @@ namespace RecognizerTestApp.Services
         private Context _appContext;
         private string _currentReferenceString;
         public const int RECOGNITION_VALUE = 80;
-        private readonly Com.Arview.Aurecognizerlibrary.RecognitionResult _recognitionResult = new Com.Arview.Aurecognizerlibrary.RecognitionResult();
+        private readonly RecognitionResult _recognitionResult = new RecognitionResult();
 
         private FirebaseApp _defaultFirebaseApp;
         private ProcessImageListener _firebaseProcessImageListener;
@@ -155,11 +152,11 @@ namespace RecognizerTestApp.Services
 
             await Task.Run(() =>
             {
-                InitFirebase();
+                //InitFirebase();
 
                 try
                 {
-                    IsInitialized = _auCodeLibrary.Init(path);
+                    IsInitialized = _auCodeLibrary.Init(path, "rus");
                     IsInitialized = true;
                 }
                 catch (Exception e)
@@ -206,16 +203,15 @@ namespace RecognizerTestApp.Services
             }
         }
 
-        public async Task<Com.Arview.Aurecognizerlibrary.RecognitionResult> RecognizeText(Bitmap bitmap, Android.Util.Size size)
+        public async Task<RecognitionResult> RecognizeText(Bitmap bitmap, Android.Util.Size size)
         {
             try
             {
                 _recognitionResult.Invalidate();
 
-                // await Task.Factory.StartNew();
-
                 string text = string.Empty;
-                await Task.Run(() => { text = _auCodeLibrary.RecognizeText(bitmap, _referenceHues, size); });
+
+                await Task.Run(() => { text = _auCodeLibrary.RecognizeText(bitmap, _referenceHues); });
 
                 SetRecognitionResultFromText(text);
             }
