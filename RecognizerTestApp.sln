@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Recognizer.Android", "Recog
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Recognizer.Core", "RecognizerCore\Recognizer.Core.csproj", "{1E2F07CA-7311-42AB-B0C9-47F1E20A1595}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Recognizer.Android.Library", "Recognizer.Android.Library\Recognizer.Android.Library.csproj", "{75552663-2F86-45FE-8FEC-4BA09C89A528}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecognizerTestApp.BindingLibrary", "RecognizerTestApp.BindingLibrary\RecognizerTestApp.BindingLibrary.csproj", "{84D3041E-D03D-429E-9ABE-32F1C0C009D4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,18 +25,18 @@ Global
 		{1E2F07CA-7311-42AB-B0C9-47F1E20A1595}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E2F07CA-7311-42AB-B0C9-47F1E20A1595}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E2F07CA-7311-42AB-B0C9-47F1E20A1595}.Release|Any CPU.Build.0 = Release|Any CPU
-		{75552663-2F86-45FE-8FEC-4BA09C89A528}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{75552663-2F86-45FE-8FEC-4BA09C89A528}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{75552663-2F86-45FE-8FEC-4BA09C89A528}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{75552663-2F86-45FE-8FEC-4BA09C89A528}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84D3041E-D03D-429E-9ABE-32F1C0C009D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84D3041E-D03D-429E-9ABE-32F1C0C009D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84D3041E-D03D-429E-9ABE-32F1C0C009D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84D3041E-D03D-429E-9ABE-32F1C0C009D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C6524FC5-DF58-4E2C-A564-DE4F1E36BD36}
-		RESX_NeutralResourcesLanguage = ru-RU
-		RESX_AutoCreateNewLanguageFiles = True
 		RESX_ConfirmAddLanguageFile = True
+		RESX_AutoCreateNewLanguageFiles = True
+		RESX_NeutralResourcesLanguage = ru-RU
+		SolutionGuid = {C6524FC5-DF58-4E2C-A564-DE4F1E36BD36}
 	EndGlobalSection
 EndGlobal

@@ -138,6 +138,9 @@
     <PackageReference Include="Xamarin.GooglePlayServices.Vision">
       <Version>71.1702.0</Version>
     </PackageReference>
+    <PackageReference Include="Xamarin.Kotlin.StdLib">
+      <Version>1.3.50</Version>
+    </PackageReference>
     <PackageReference Include="Xamarin.Tesseract">
       <Version>0.3.4</Version>
     </PackageReference>
@@ -149,13 +152,13 @@
     <Folder Include="Resources\Strings\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Recognizer.Android.Library\Recognizer.Android.Library.csproj">
-      <Project>{75552663-2f86-45fe-8fec-4ba09c89a528}</Project>
-      <Name>Recognizer.Android.Library</Name>
-    </ProjectReference>
     <ProjectReference Include="..\RecognizerCore\Recognizer.Core.csproj">
       <Project>{1e2f07ca-7311-42ab-b0c9-47f1e20a1595}</Project>
       <Name>Recognizer.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RecognizerTestApp.BindingLibrary\RecognizerTestApp.BindingLibrary.csproj">
+      <Project>{84d3041e-d03d-429e-9abe-32f1c0c009d4}</Project>
+      <Name>RecognizerTestApp.BindingLibrary</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
