@@ -184,9 +184,9 @@ namespace RecognizerTestApp
             {
                 _recognizerService.StartRecognizingText();
 
-                _textureView.GetBitmap(_textureViewBitmap);
+                 _textureView.GetBitmap(_textureViewBitmap);
 
-                var rect = _overlayView.Rect;
+                    var rect = _overlayView.Rect;
 
                 Bitmap bitmap = null;
 
