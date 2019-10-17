@@ -50,18 +50,6 @@ namespace RecognizerTestApp.Services
         public volatile bool IsInitialized;
         public volatile bool SearchComplete;
 
-        public volatile bool RecognizingTextInProgress;
-
-        public void StartRecognizingText()
-        {
-            RecognizingTextInProgress = true;
-        }
-
-        public void StopRecognizingText()
-        {
-            RecognizingTextInProgress = false;
-        }
-
         private void InitFirebase()
         {
             try
@@ -148,12 +136,9 @@ namespace RecognizerTestApp.Services
             _appContext = appContext ?? throw new ArgumentNullException(nameof(appContext));
             var path = await CopyAssets();
 
-            File directory = new File(path);
-            File[] files = directory.ListFiles();
-
             await Task.Run(() =>
             {
-                InitFirebase();
+                //InitFirebase();
 
                 try
                 {
@@ -165,10 +150,7 @@ namespace RecognizerTestApp.Services
                     Console.WriteLine(e);
                 }
               
-
-                
             });
-
         }
 
         private void SetRecognitionResultFromText(string originalText)
@@ -204,7 +186,7 @@ namespace RecognizerTestApp.Services
             }
         }
 
-        public async Task<RecognitionResult> RecognizeText(Bitmap bitmap, Android.Util.Size size)
+        public async Task<RecognitionResult> RecognizeText(Bitmap bitmap)
         {
             try
             {
@@ -222,7 +204,8 @@ namespace RecognizerTestApp.Services
                     {
                         Console.WriteLine(e);
                     }
-                   
+                    //RecognizingTextInProgress = false;
+
                 });
 
                 SetRecognitionResultFromText(text);
@@ -230,10 +213,6 @@ namespace RecognizerTestApp.Services
             catch (Exception e)
             {
                 Console.WriteLine(e);
-            }
-            finally
-            {
-                RecognizingTextInProgress = false;
             }
 
             return _recognitionResult;

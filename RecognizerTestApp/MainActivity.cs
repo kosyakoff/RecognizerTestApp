@@ -36,6 +36,8 @@ namespace RecognizerTestApp
         // Max preview height that is guaranteed by Camera2 API
         private static readonly int MAX_PREVIEW_HEIGHT = 1080;
 
+        public volatile bool RecognizingTextInProgress;
+
         private Camera _camera;
         private TextView _debugText;
         private Button _flashButton;
@@ -86,7 +88,7 @@ namespace RecognizerTestApp
             // camera takes care of this
         }
 
-        public async void OnSurfaceTextureUpdated(SurfaceTexture surface)
+        public void OnSurfaceTextureUpdated(SurfaceTexture surface)
         {
             if (_recognizerService.GetRecognizingActor() == RecognizingActor.Server &&
                 !_recognizerService.CanBeRecognizedFromServer())
@@ -99,10 +101,9 @@ namespace RecognizerTestApp
                 return;
             }
 
-            if (_recognizerService.IsInitialized && !_recognizerService.SearchComplete &&
-                !_recognizerService.RecognizingTextInProgress)
+            if (_recognizerService.IsInitialized && !_recognizerService.SearchComplete && !RecognizingTextInProgress)
             {
-                await Task.Factory.StartNew(RecognizeText);
+                RecognizeText();//Task.Factory.StartNew(RecognizeText);
             }
         }
 
@@ -178,11 +179,11 @@ namespace RecognizerTestApp
             await _recognizerService.Init(ApplicationContext);
         }
 
-        private async Task RecognizeText()
+        private async void RecognizeText()
         {
             try
             {
-                _recognizerService.StartRecognizingText();
+                RecognizingTextInProgress = true;
 
                  _textureView.GetBitmap(_textureViewBitmap);
 
@@ -197,7 +198,7 @@ namespace RecognizerTestApp
                     bitmap = Bitmap.CreateBitmap(_textureViewBitmap, rect.Left, rect.Top, rect.Width(), rect.Height(),
                         matrix, false);
                 }
-                var result = await _recognizerService.RecognizeText(bitmap, new Size(rect.Width(), rect.Height()));
+                var result = await _recognizerService.RecognizeText(bitmap);
 
                 if (result.Quality >= RecognizerService.RECOGNITION_VALUE)
                 {
@@ -219,7 +220,7 @@ namespace RecognizerTestApp
                     });
                 }
 
-                _recognizerService.StopRecognizingText();
+                RecognizingTextInProgress = false;
 
             }
             catch (Exception e)
@@ -375,7 +376,7 @@ namespace RecognizerTestApp
                 return;
             }
 
-            MainInit(_surface);
+            Task.Factory.StartNew(() => MainInit(_surface));
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions,
