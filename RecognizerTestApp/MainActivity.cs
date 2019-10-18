@@ -55,6 +55,7 @@ namespace RecognizerTestApp
         private Bitmap _textureViewBitmap;
         private TextView _serviceText;
         private SurfaceTexture _surface;
+        private Bitmap _recognizeBitmap = null;
 
         private TextureView _textureView;
         private TextView _textView;
@@ -183,12 +184,11 @@ namespace RecognizerTestApp
         {
             try
             {
-                RecognizingTextInProgress = true;
+                 RecognizingTextInProgress = true;
 
                  _textureView.GetBitmap(_textureViewBitmap);
 
-                    var rect = _overlayView.Rect;
-
+                var rect = _overlayView.Rect;
                 Bitmap bitmap = null;
 
                 using (var matrix = new Matrix())
@@ -212,11 +212,24 @@ namespace RecognizerTestApp
                     });
                 }
 
+                if (_recognizeBitmap != null)
+                {
+                    if (GeneralSettings.ShowVisionImage)
+                    {
+                        _visionView.SetImageResource(Android.Resource.Color.Transparent);
+                    }
+
+                    _recognizeBitmap.Recycle();
+                    _recognizeBitmap.Dispose();
+                }
+
+                _recognizeBitmap = bitmap;
+
                 if (GeneralSettings.ShowVisionImage)
                 {
                     RunOnUiThread(() =>
                     {
-                        _visionView.SetImageBitmap(bitmap);
+                        _visionView.SetImageBitmap(_recognizeBitmap);
                     });
                 }
 

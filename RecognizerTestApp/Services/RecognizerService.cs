@@ -10,9 +10,7 @@ using Firebase.ML.Vision;
 using Firebase.ML.Vision.Common;
 using Firebase.ML.Vision.Text;
 using Recognizer.Core;
-using Tesseract.Droid;
 using Console = System.Console;
-//using Recognizer.Android.Library;
 using Exception = System.Exception;
 using File = Java.IO.File;
 
@@ -43,7 +41,6 @@ namespace RecognizerTestApp.Services
         private FirebaseVisionTextRecognizer _firebaseVisionTextDetector;
         private RecognizingActor _recognizingActor;
         private Android.Util.Size _recognizeAreaSize = new Android.Util.Size(0,0);
-        private AssetsDeployment _assetsDeployment;
 
         private readonly Com.Arview.Aurecognizerlibrary.AuCodeLibrary _auCodeLibrary = new Com.Arview.Aurecognizerlibrary.AuCodeLibrary();
 
@@ -86,7 +83,7 @@ namespace RecognizerTestApp.Services
                 {
                     tessdata.Mkdir();
                 }
-                else if (_assetsDeployment == AssetsDeployment.OncePerVersion)
+                else
                 {
                     var packageInfo = _appContext.PackageManager.GetPackageInfo(_appContext.PackageName, 0);
                     var version = packageInfo.VersionName;

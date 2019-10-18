@@ -26,8 +26,6 @@ namespace RecognizerTestApp
 		
 		public static void UpdateIdValues()
 		{
-			global::Tesseract.Droid.Resource.String.ApplicationName = global::RecognizerTestApp.Resource.String.ApplicationName;
-			global::Tesseract.Droid.Resource.String.Hello = global::RecognizerTestApp.Resource.String.Hello;
 		}
 		
 		public partial class Animation
@@ -4132,12 +4130,6 @@ namespace RecognizerTestApp
 		public partial class String
 		{
 			
-			// aapt resource value: 0x7f09004a
-			public const int ApplicationName = 2131296330;
-			
-			// aapt resource value: 0x7f090049
-			public const int Hello = 2131296329;
-			
 			// aapt resource value: 0x7f090013
 			public const int abc_action_bar_home_description = 2131296275;
 			
@@ -4255,11 +4247,11 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f09002d
 			public const int abc_toolbar_collapse_description = 2131296301;
 			
-			// aapt resource value: 0x7f090056
-			public const int action_settings = 2131296342;
+			// aapt resource value: 0x7f090054
+			public const int action_settings = 2131296340;
 			
-			// aapt resource value: 0x7f09004b
-			public const int app_name = 2131296331;
+			// aapt resource value: 0x7f090049
+			public const int app_name = 2131296329;
 			
 			// aapt resource value: 0x7f09003b
 			public const int appbar_scrolling_view_behavior = 2131296315;
@@ -4327,8 +4319,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f090011
 			public const int common_signin_button_text_long = 2131296273;
 			
-			// aapt resource value: 0x7f09004e
-			public const int default_web_client_id = 2131296334;
+			// aapt resource value: 0x7f09004c
+			public const int default_web_client_id = 2131296332;
 			
 			// aapt resource value: 0x7f09003f
 			public const int fab_transformation_scrim_behavior = 2131296319;
@@ -4339,32 +4331,32 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f090012
 			public const int fcm_fallback_notification_channel_label = 2131296274;
 			
-			// aapt resource value: 0x7f09004f
-			public const int firebase_database_url = 2131296335;
+			// aapt resource value: 0x7f09004d
+			public const int firebase_database_url = 2131296333;
 			
-			// aapt resource value: 0x7f09004c
-			public const int gcm_defaultSenderId = 2131296332;
+			// aapt resource value: 0x7f09004a
+			public const int gcm_defaultSenderId = 2131296330;
+			
+			// aapt resource value: 0x7f09004e
+			public const int google_api_key = 2131296334;
+			
+			// aapt resource value: 0x7f09004b
+			public const int google_app_id = 2131296331;
+			
+			// aapt resource value: 0x7f09004f
+			public const int google_crash_reporting_api_key = 2131296335;
 			
 			// aapt resource value: 0x7f090050
-			public const int google_api_key = 2131296336;
-			
-			// aapt resource value: 0x7f09004d
-			public const int google_app_id = 2131296333;
-			
-			// aapt resource value: 0x7f090051
-			public const int google_crash_reporting_api_key = 2131296337;
-			
-			// aapt resource value: 0x7f090052
-			public const int google_storage_bucket = 2131296338;
+			public const int google_storage_bucket = 2131296336;
 			
 			// aapt resource value: 0x7f090041
 			public const int hide_bottom_view_on_scroll_behavior = 2131296321;
 			
-			// aapt resource value: 0x7f090054
-			public const int menu_client = 2131296340;
+			// aapt resource value: 0x7f090052
+			public const int menu_client = 2131296338;
 			
-			// aapt resource value: 0x7f090055
-			public const int menu_server = 2131296341;
+			// aapt resource value: 0x7f090053
+			public const int menu_server = 2131296339;
 			
 			// aapt resource value: 0x7f090042
 			public const int mtrl_chip_close_icon_content_description = 2131296322;
@@ -4384,8 +4376,8 @@ namespace RecognizerTestApp
 			// aapt resource value: 0x7f090047
 			public const int path_password_strike_through = 2131296327;
 			
-			// aapt resource value: 0x7f090053
-			public const int project_id = 2131296339;
+			// aapt resource value: 0x7f090051
+			public const int project_id = 2131296337;
 			
 			// aapt resource value: 0x7f09002e
 			public const int search_menu_title = 2131296302;
